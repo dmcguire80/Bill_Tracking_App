@@ -63,7 +63,8 @@ ls -la lxc/
 
 pm2 start "$INSTALL_DIR/lxc/pm2-ecosystem.config.cjs"
 pm2 save
-pm2 startup | tail -n 1 | bash # Set PM2 to start on boot
+# Explicitly set startup for systemd on Debian (avoids fragile pipe/tail method)
+pm2 startup systemd -u root --hp /root
 
 msg_ok "Success! App is running on version $LATEST_TAG"
 msg_ok "Access via Nginx on port 80 at: http://<Container-IP>"
