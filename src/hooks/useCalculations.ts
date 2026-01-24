@@ -1,14 +1,37 @@
 import { useMemo } from 'react';
-import { ACCOUNTS } from '../types';
 import type { Entry, Bill, Payday, Account } from '../types';
 
-export const useCalculations = (data: Entry[]) => {
+const MONTH_ORDER: Record<string, number> = {
+    'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+    'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+};
+
+export const useCalculations = (data: Entry[], accounts: Account[]) => {
     const calculations = useMemo(() => {
         // Sort data by date/month to ensure correct order
         const sortedData = [...data].sort((a, b) => {
-            // Very basic sort for now - assuming same month/year or chronological order in input
-            if (a.month !== b.month) return 0; // TODO: Implement proper date sorting across months
-            return a.date - b.date;
+            // Extract year if present in month string (e.g. "Jan '26")
+            const getYear = (m: string) => {
+                const parts = m.split("'");
+                return parts.length > 1 ? parseInt(parts[1]) : 26; // Default to 26
+            };
+            const getMonth = (m: string) => {
+                const monthName = m.split(" ")[0];
+                return MONTH_ORDER[monthName] ?? 0;
+            };
+
+            const yearA = getYear(a.month);
+            const yearB = getYear(b.month);
+            if (yearA !== yearB) return yearA - yearB;
+
+            const monthA = getMonth(a.month);
+            const monthB = getMonth(b.month);
+            if (monthA !== monthB) return monthA - monthB;
+
+            if (a.date !== b.date) return a.date - b.date;
+
+            // Same day: Payday first
+            return (a.type === 'payday' ? 0 : 1) - (b.type === 'payday' ? 0 : 1);
         });
 
         // Group by Payday period
@@ -33,31 +56,41 @@ export const useCalculations = (data: Entry[]) => {
         // Calculate balances for each period
         const processedPeriods = periods.map(period => {
             const { payday, bills } = period;
-            const currentBalances = { ...payday.balances } as Record<Account, number>;
+            const cycleOwed = {} as Record<string, number>;
+            const paidAmount = {} as Record<string, number>;
+            const remaining = {} as Record<string, number>;
 
-            // Ensure all accounts exist
-            ACCOUNTS.forEach(acc => {
-                if (currentBalances[acc] === undefined) currentBalances[acc] = 0;
+            // Initialize all accounts
+            accounts.forEach(acc => {
+                cycleOwed[acc.name] = 0;
+                paidAmount[acc.name] = 0;
             });
 
-            // Calculate remaining balance by subtracting PAID bills
+            // Calculate Owed (total of all bills in cycle) and Paid (total of paid bills)
             bills.forEach(bill => {
-                if (bill.paid) {
-                    ACCOUNTS.forEach(acc => {
-                        const amount = bill.amounts[acc];
-                        if (amount) {
-                            currentBalances[acc] = (currentBalances[acc] || 0) - amount;
+                accounts.forEach(acc => {
+                    const amount = bill.amounts[acc.name];
+                    if (amount) {
+                        cycleOwed[acc.name] += amount;
+                        if (bill.paid) {
+                            paidAmount[acc.name] += amount;
                         }
-                    });
-                }
+                    }
+                });
+            });
+
+            // Calculate remaining = owed - paid
+            accounts.forEach(acc => {
+                remaining[acc.name] = cycleOwed[acc.name] - paidAmount[acc.name];
             });
 
             return {
-                payday: { ...payday, calculatedBalances: { ...currentBalances } },
-                bills: bills.map(bill => ({ ...bill, calculatedBalances: { ...currentBalances } })) // Pass remaining balance to bills too? Or previous logic?
-                // Actually, let's pass the *Remaining* balance to all bills in the period for now, 
-                // or just leave them empty if we only care about the Payday row.
-                // The BillTable logic I wrote for Bills uses `bill.amounts` mostly.
+                payday: {
+                    ...payday,
+                    totalOwed: { ...cycleOwed },
+                    calculatedBalances: { ...remaining }
+                },
+                bills: bills.map(bill => ({ ...bill, calculatedBalances: { ...remaining } }))
             };
         });
 
@@ -68,7 +101,7 @@ export const useCalculations = (data: Entry[]) => {
         ];
 
         return result;
-    }, [data]);
+    }, [data, accounts]);
 
     return calculations;
 };
