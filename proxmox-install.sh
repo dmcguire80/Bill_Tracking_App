@@ -77,7 +77,8 @@ NEXTID=$(pvesh get /cluster/nextid)
 CT_ID=$(input_box "Container ID" "Enter the LXC Container ID:" "$NEXTID") || exit 1
 
 # 3. Password
-CT_PASS=$(input_box "Password" "Enter the root password for the container:" "password") || exit 1
+# 3. Password
+CT_PASS=$(whiptail --title "Password" --passwordbox "Enter the root password for the container:" 10 60 3>&1 1>&2 2>&3) || exit 1
 
 # 4. Template Storage
 TEMPLATE_STORAGE=$(select_storage template) || exit 1
@@ -87,7 +88,7 @@ msg_info "Updating template list..."
 pveam update >/dev/null
 
 # Filter for Debian 12 templates
-local -a TEMPLATE_MENU
+TEMPLATE_MENU=()
 while read -r TAG; do
   TEMPLATE_MENU+=("$TAG" "" "OFF")
 done < <(pveam available -section system | grep "debian-12-standard" | awk '{print $2}' | sort -r)
