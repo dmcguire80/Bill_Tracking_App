@@ -60,11 +60,14 @@ npm install
 npm run dev
 ```
 
-### Proxmox VE Deployment
-Automated scripts are provided for Proxmox LXC deployment:
-1. Copy the raw link to [create_lxc.sh](https://raw.githubusercontent.com/dmcguire80/Bill_Tracking_App/main/proxmox/create_lxc.sh)
-2. Run it on your Proxmox host: `curl -fsSL <link> | bash`
-3. See [Proxmox Installation Guide](proxmox/README.md) for detailed instructions.
+### Proxmox VE Deployment (Recommended)
+You can deploy this application to a Proxmox LXC container with a single command run on your Proxmox Host:
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/dmcguire80/Bill_Tracking_App/main/proxmox-install.sh)"
+```
+
+For detailed options and manual steps, see the [Proxmox Installation Guide](lxc/README.md).
 
 The app will be available at `http://localhost:5173`
 
