@@ -78,7 +78,16 @@ CT_ID=$(input_box "Container ID" "Enter the LXC Container ID:" "$NEXTID") || exi
 
 # 3. Password
 # 3. Password
-CT_PASS=$(whiptail --title "Password" --passwordbox "Enter the root password for the container:" 10 60 3>&1 1>&2 2>&3) || exit 1
+while true; do
+    CT_PASS=$(whiptail --title "Password" --passwordbox "Enter the root password for the container:" 10 60 3>&1 1>&2 2>&3) || exit 1
+    CT_PASS_CONFIRM=$(whiptail --title "Password Confirmation" --passwordbox "Confirm the root password:" 10 60 3>&1 1>&2 2>&3) || exit 1
+    
+    if [ "$CT_PASS" == "$CT_PASS_CONFIRM" ]; then
+        break
+    else
+        whiptail --title "Error" --msgbox "Passwords do not match. Please try again." 10 60
+    fi
+done
 
 # 4. Template Storage
 TEMPLATE_STORAGE=$(select_storage template) || exit 1
