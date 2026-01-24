@@ -21,6 +21,9 @@
 - Modern, premium design ("wowed at first glance", "vibrant colors", "smooth gradients").
 - **CRUD Operations:** Add/Edit/Remove Bills, Due Dates, Amounts, Payment Accounts.
 - **Adhoc Bills:** Ability to add one-off/extra bill payments (Adhoc lines).
+- **Administrative Pages:** Dedicated interface to setup bills and payment accounts.
+- **Bill Templates:** Define bills with recurrence rules (Bi-weekly, Monthly, Yearly).
+- **Auto-Population:** Generate a full year of records based on templates.
 - **Auto-Update:** App updates list automatically when data changes.
 - **Dynamic Logic:** Bill rows subtract from Payday accounts as marked complete.
 - **Pay Period Totals:** Maintain running total for the pay period.

@@ -64,9 +64,21 @@ Phase 1
 - [x] Implement Main Table View (Bills & Paydays)
 - [x] Implement "Paid" toggle functionality
 - [x] Implement Account Columns and Totals
+- [x] Implement Account Columns and Totals
 - **Status:** complete
 
-### Phase 4: Logic & calculations
+### Phase 4: Admin & Automation (New)
+<!--
+  WHAT: Admin pages and auto-generation.
+-->
+- [ ] Install React Router & Setup Layout
+- [ ] Define BillTemplate Data Model
+- [ ] Create Manage Bills Page
+- [ ] Implement Generation Logic (Bi-weekly/Monthly/Yearly)
+- [ ] Integrate Generator with Dashboard
+- **Status:** pending
+
+### Phase 5: Logic & calculations
 <!-- 
   WHAT: Verify everything works and meets requirements.
   WHY: Catching issues early saves time. Document test results in progress.md.
