@@ -10,6 +10,14 @@ Run this command directly on your **Proxmox Host** shell (SSH or Web Console):
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/dmcguire80/Bill_Tracking_App/main/proxmox-install.sh)"
 ```
 
+**Note on Storage:**
+If you get an error like `storage 'local' does not support container directories`, it means your Proxmox `local` storage is restricted to ISOs. The script now attempts to **auto-detect** a valid storage (like `local-lvm` or `local-zfs`), but you can manually override it by downloading and running the script with arguments:
+
+```bash
+# Usage: ./proxmox-install.sh [CT_ID] [PASSWORD] [DISK_STORAGE]
+./proxmox-install.sh 105 your_secure_password local-lvm
+```
+
 ## 📂 Deployment Structure
 
 The deployment logic is organized as follows:
