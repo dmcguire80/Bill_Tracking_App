@@ -10,6 +10,7 @@ import { useCalculations } from './hooks/useCalculations';
 import { useData } from './context/DataContext';
 import type { Bill, Payday, Entry } from './types';
 import { Plus } from 'lucide-react';
+import { uuid } from './utils/uuid';
 
 import { ManageBills } from './pages/ManageBills';
 import { ManageAccounts } from './pages/ManageAccounts';
@@ -34,7 +35,7 @@ function Dashboard() {
   const handleAddBill = (billData: Omit<Bill, 'id' | 'type' | 'paid'>) => {
     const newBill: Bill = {
       ...billData,
-      id: crypto.randomUUID(),
+      id: uuid(),
       type: 'bill',
       paid: false,
       amounts: billData.amounts
@@ -45,7 +46,7 @@ function Dashboard() {
   const handleAddPayday = (paydayData: Omit<Payday, 'id' | 'type'>) => {
     const newPayday: Payday = {
       ...paydayData,
-      id: crypto.randomUUID(),
+      id: uuid(),
       type: 'payday',
       balances: paydayData.balances
     };

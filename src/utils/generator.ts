@@ -1,4 +1,5 @@
 import type { BillTemplate, Bill, PaydayTemplate, Payday, Entry } from '../types';
+import { uuid } from './uuid';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH_INDEX: Record<string, number> = Object.fromEntries(MONTHS.map((m, i) => [m, i]));
@@ -20,7 +21,7 @@ export const generateEntries = (templates: BillTemplate[], paydayTemplates: Payd
 
             if (isBill) {
                 return {
-                    id: crypto.randomUUID(),
+                    id: uuid(),
                     templateId: template.id,
                     type: 'bill',
                     name: template.name,
@@ -31,7 +32,7 @@ export const generateEntries = (templates: BillTemplate[], paydayTemplates: Payd
                 } as Bill;
             } else {
                 return {
-                    id: crypto.randomUUID(),
+                    id: uuid(),
                     templateId: template.id,
                     type: 'payday',
                     name: template.name,

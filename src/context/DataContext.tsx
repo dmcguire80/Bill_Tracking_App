@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import type { Entry, BillTemplate, Account, PaydayTemplate, Bill } from '../types';
 import { initialData } from '../data/initialData';
 import { generateEntries } from '../utils/generator';
+import { uuid } from '../utils/uuid';
 
 // Initial hardcoded accounts until we have persistence - UPDATED to object format
 const DEFAULT_ACCOUNTS: Account[] = [];
@@ -39,7 +40,7 @@ const migrateAccounts = (saved: string): Account[] => {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && typeof parsed[0] === 'string') {
             return parsed.map((name: string, index: number) => ({
-                id: crypto.randomUUID(),
+                id: uuid(),
                 name,
                 order: index
             }));
@@ -145,7 +146,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         if (!accounts.some(a => a.name === name)) {
             setAccounts(prev => [
                 ...prev,
-                { id: crypto.randomUUID(), name, order: prev.length }
+                { id: uuid(), name, order: prev.length }
             ]);
         }
     };
