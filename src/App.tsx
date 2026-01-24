@@ -5,6 +5,7 @@ import { BillForm } from './components/BillForm';
 import { PaydayForm } from './components/PaydayForm';
 import { Layout } from './components/Layout';
 import { Navigation } from './components/Navigation';
+import { SetupWizard } from './components/SetupWizard';
 import { useCalculations } from './hooks/useCalculations';
 import { useData } from './context/DataContext';
 import type { Bill, Payday, Entry } from './types';
@@ -148,6 +149,18 @@ function Dashboard() {
 }
 
 function App() {
+  const [setupComplete, setSetupComplete] = useState(() => {
+    return localStorage.getItem('setupComplete') === 'true';
+  });
+
+  const handleSetupComplete = () => {
+    setSetupComplete(true);
+  };
+
+  if (!setupComplete) {
+    return <SetupWizard onComplete={handleSetupComplete} />;
+  }
+
   return (
     <BrowserRouter>
       <Layout>
