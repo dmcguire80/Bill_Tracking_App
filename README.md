@@ -45,16 +45,12 @@ A modern, intuitive bill tracking and financial management application built wit
 - **State Management**: React Context API
 - **Data Persistence**: localStorage (v0.3.0)
 
-## Getting Started
+## Installation
 
-### Prerequisites
-- Node.js 16+ and npm
-
-### Installation
-
+### Local Development
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/dmcguire80/Bill_Tracking_App.git
 cd Bill_Tracking_App
 
 # Install dependencies
@@ -63,6 +59,12 @@ npm install
 # Start development server
 npm run dev
 ```
+
+### Proxmox VE Deployment
+Automated scripts are provided for Proxmox LXC deployment:
+1. Copy the raw link to [create_lxc.sh](https://raw.githubusercontent.com/dmcguire80/Bill_Tracking_App/main/proxmox/create_lxc.sh)
+2. Run it on your Proxmox host: `curl -fsSL <link> | bash`
+3. See [Proxmox Installation Guide](proxmox/README.md) for detailed instructions.
 
 The app will be available at `http://localhost:5173`
 
