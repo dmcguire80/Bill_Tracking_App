@@ -4,6 +4,7 @@ import { Navigation } from '../components/Navigation';
 import { SettingsNav } from '../components/SettingsNav';
 import { Plus, Trash2, Calendar, RefreshCw, Edit2 } from 'lucide-react';
 import type { PaydayTemplate, RecurrenceType } from '../types';
+import { uuid } from '../utils/uuid';
 
 export const ManagePaydays = () => {
     const { paydayTemplates, accounts, addPaydayTemplate, deletePaydayTemplate, updatePaydayTemplate } = useData();
@@ -65,7 +66,7 @@ export const ManagePaydays = () => {
         } else {
             addPaydayTemplate({
                 ...templateData,
-                id: crypto.randomUUID()
+                id: uuid()
             });
         }
         setIsFormOpen(false);

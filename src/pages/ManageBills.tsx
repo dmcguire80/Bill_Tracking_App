@@ -4,6 +4,7 @@ import { Navigation } from '../components/Navigation';
 import { SettingsNav } from '../components/SettingsNav';
 import { Plus, Trash2, Calendar, RefreshCw, Edit2 } from 'lucide-react';
 import type { BillTemplate, RecurrenceType } from '../types';
+import { uuid } from '../utils/uuid';
 
 export const ManageBills = () => {
     const { templates, accounts, addTemplate, deleteTemplate, updateTemplate } = useData();
@@ -72,7 +73,7 @@ export const ManageBills = () => {
         } else {
             addTemplate({
                 ...templateData,
-                id: crypto.randomUUID()
+                id: uuid()
             });
         }
         setIsFormOpen(false);
