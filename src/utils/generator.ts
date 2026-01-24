@@ -67,28 +67,42 @@ export const generateEntries = (templates: BillTemplate[], paydayTemplates: Payd
                 }
             });
         }
-        else if (template.recurrence === 'bi-weekly' || template.recurrence === 'weekly') {
-            const interval = template.recurrence === 'weekly' ? 7 : 14;
-            // Start from the first occurrence in the start month
-            let currentDate = new Date(year, startMonthIndex, template.day);
-
-            while (currentDate.getFullYear() === year) {
-                const monthStr = MONTHS[currentDate.getMonth()];
-                const monthIndex = currentDate.getMonth();
-                const day = currentDate.getDate();
-
-                // Only add entry if within the active range
-                if (monthIndex >= startMonthIndex && monthIndex <= endMonthIndex) {
-                    entries.push(createEntry(monthStr, day));
-                }
-
-                currentDate.setDate(currentDate.getDate() + interval);
-            }
+    }
+        else if (template.recurrence === 'manual' && 'manualDates' in template && template.manualDates) {
+    template.manualDates.forEach(dateObj => {
+        const mIndex = MONTH_INDEX[dateObj.month];
+        if (mIndex >= startMonthIndex && mIndex <= endMonthIndex) {
+            entries.push(createEntry(dateObj.month, dateObj.day));
         }
+    });
+}
+else if (template.recurrence === 'bi-weekly' || template.recurrence === 'weekly' || template.recurrence === 'custom-interval') {
+    let interval = 14;
+    if (template.recurrence === 'weekly') interval = 7;
+    if (template.recurrence === 'custom-interval' && 'intervalDays' in template) {
+        interval = (template as BillTemplate).intervalDays || 30; // Default to 30 if missing
+    }
+
+    // Start from the first occurrence in the start month
+    let currentDate = new Date(year, startMonthIndex, template.day);
+
+    while (currentDate.getFullYear() === year) {
+        const monthStr = MONTHS[currentDate.getMonth()];
+        const monthIndex = currentDate.getMonth();
+        const day = currentDate.getDate();
+
+        // Only add entry if within the active range
+        if (monthIndex >= startMonthIndex && monthIndex <= endMonthIndex) {
+            entries.push(createEntry(monthStr, day));
+        }
+
+        currentDate.setDate(currentDate.getDate() + interval);
+    }
+}
     };
 
-    templates.forEach(processTemplate);
-    paydayTemplates.forEach(processTemplate);
+templates.forEach(processTemplate);
+paydayTemplates.forEach(processTemplate);
 
-    return entries;
+return entries;
 };

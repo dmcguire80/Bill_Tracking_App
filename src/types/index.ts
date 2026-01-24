@@ -27,20 +27,22 @@ export interface Payday {
     balances: Partial<Record<string, number>>;
 }
 
-export type RecurrenceType = 'weekly' | 'bi-weekly' | 'semi-monthly' | 'monthly' | 'yearly';
+export type RecurrenceType = 'weekly' | 'bi-weekly' | 'semi-monthly' | 'monthly' | 'yearly' | 'custom-interval' | 'manual';
 
 export interface BillTemplate {
     id: string;
     name: string;
-    day: number; // Day of month (1-31) or starting day for bi-weekly
+    day: number; // Day of month (1-31) or starting day for bi-weekly/custom
     day2?: number; // Second day for semi-monthly
     month?: string; // For yearly bills
-    startMonth?: string; // When to start generating (e.g. 'Mar' for March onwards)
-    endMonth?: string; // When to stop generating (e.g. 'Dec' for December)
+    startMonth?: string; // When to start generating
+    endMonth?: string; // When to stop generating
     recurrence: RecurrenceType | 'one-time';
+    intervalDays?: number; // For custom-interval
+    manualDates?: { month: string; day: number }[]; // For manual recurrence
     amounts: Partial<Record<string, number>>;
     autoGenerate: boolean;
-    isActive: boolean; // Whether this template is currently active
+    isActive: boolean;
 }
 
 export interface PaydayTemplate {

@@ -19,6 +19,8 @@ export const ManageBills = () => {
     const [month, setMonth] = useState('Jan');
     const [startMonth, setStartMonth] = useState('Jan');
     const [endMonth, setEndMonth] = useState<string | undefined>(undefined);
+    const [intervalDays, setIntervalDays] = useState<number>(30); // Default for custom
+    const [manualDates, setManualDates] = useState<{ month: string; day: number }[]>([{ month: 'Jan', day: 1 }]);
     const [isActive, setIsActive] = useState(true);
     const [amounts, setAmounts] = useState<Partial<Record<string, number>>>({});
 
@@ -31,6 +33,8 @@ export const ManageBills = () => {
         setDay(1);
         setStartMonth('Jan');
         setEndMonth(undefined);
+        setIntervalDays(30);
+        setManualDates([{ month: 'Jan', day: 1 }]);
         setIsActive(true);
         setAmounts({});
     };
@@ -44,6 +48,8 @@ export const ManageBills = () => {
         if (template.month) setMonth(template.month);
         setStartMonth(template.startMonth || 'Jan');
         setEndMonth(template.endMonth);
+        if (template.intervalDays) setIntervalDays(template.intervalDays);
+        if (template.manualDates) setManualDates(template.manualDates);
         setIsActive(template.isActive);
         setAmounts(template.amounts);
         setIsFormOpen(true);
@@ -52,14 +58,16 @@ export const ManageBills = () => {
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
 
-        const templateData = {
+        const templateData: Partial<BillTemplate> = {
             name,
             recurrence,
             day: Number(day),
             day2: recurrence === 'semi-monthly' ? Number(day2) : undefined,
             month: recurrence === 'yearly' ? month : undefined,
-            startMonth: recurrence !== 'one-time' ? startMonth : undefined,
-            endMonth: recurrence !== 'one-time' && endMonth ? endMonth : undefined,
+            startMonth: (recurrence !== 'one-time' && recurrence !== 'manual') ? startMonth : undefined,
+            endMonth: (recurrence !== 'one-time' && recurrence !== 'manual') && endMonth ? endMonth : undefined,
+            intervalDays: recurrence === 'custom-interval' ? Number(intervalDays) : undefined,
+            manualDates: recurrence === 'manual' ? manualDates : undefined,
             amounts,
             autoGenerate: true,
             isActive
@@ -69,12 +77,12 @@ export const ManageBills = () => {
             updateTemplate({
                 ...templateData,
                 id: editingId
-            });
+            } as BillTemplate);
         } else {
             addTemplate({
                 ...templateData,
                 id: uuid()
-            });
+            } as BillTemplate);
         }
         setIsFormOpen(false);
         setEditingId(null);
@@ -90,7 +98,22 @@ export const ManageBills = () => {
         });
     };
 
+    // Manual Date Helpers
+    const addManualDate = () => {
+        setManualDates([...manualDates, { month: 'Jan', day: 1 }]);
+    };
 
+    const removeManualDate = (index: number) => {
+        if (manualDates.length > 1) {
+            setManualDates(manualDates.filter((_, i) => i !== index));
+        }
+    };
+
+    const updateManualDate = (index: number, field: 'month' | 'day', value: string | number) => {
+        const newDates = [...manualDates];
+        newDates[index] = { ...newDates[index], [field]: value };
+        setManualDates(newDates);
+    };
 
     return (
         <>
@@ -98,8 +121,6 @@ export const ManageBills = () => {
 
             <div className="space-y-8">
                 <SettingsNav />
-
-
 
                 <div className="flex justify-between items-end">
                     <div>
@@ -133,13 +154,15 @@ export const ManageBills = () => {
                                     </div>
                                     <div className="flex items-center gap-2 text-sm text-neutral-400 mt-1">
                                         <RefreshCw size={14} />
-                                        <span className="capitalize">{t.recurrence}</span>
+                                        <span className="capitalize">{t.recurrence.replace('-', ' ')}</span>
                                         <span>•</span>
                                         <Calendar size={14} />
                                         <span>
                                             {t.recurrence === 'bi-weekly' ? `Starts Day ${t.day}` :
-                                                t.recurrence === 'yearly' ? `${t.month} ${t.day}` :
-                                                    `Day ${t.day}`}
+                                                t.recurrence === 'custom-interval' ? `Every ${t.intervalDays} days` :
+                                                    t.recurrence === 'manual' ? `${t.manualDates?.length || 0} dates` :
+                                                        t.recurrence === 'yearly' ? `${t.month} ${t.day}` :
+                                                            `Day ${t.day}`}
                                         </span>
                                     </div>
                                     {t.endMonth && (
@@ -183,7 +206,7 @@ export const ManageBills = () => {
                 {/* Modal Form */}
                 {isFormOpen && (
                     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-                        <div className="bg-[#1e293b] border border-white/10 rounded-xl p-6 w-full max-w-md shadow-2xl">
+                        <div className="bg-[#1e293b] border border-white/10 rounded-xl p-6 w-full max-w-md shadow-2xl overflow-y-auto max-h-[90vh]">
                             <h2 className="text-xl font-bold text-white mb-6">{editingId ? 'Edit Bill Template' : 'New Bill Template'}</h2>
                             <form onSubmit={handleSave} className="space-y-4">
                                 <div>
@@ -195,7 +218,7 @@ export const ManageBills = () => {
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div>
+                                    <div className="col-span-2">
                                         <label className="block text-sm text-neutral-400 mb-1">Recurrence</label>
                                         <select
                                             className="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-white"
@@ -206,23 +229,83 @@ export const ManageBills = () => {
                                             <option value="weekly">Weekly</option>
                                             <option value="semi-monthly">Twice Monthly (e.g. 1st & 15th)</option>
                                             <option value="yearly">Yearly</option>
+                                            <option value="custom-interval">Custom Interval (Every X Days)</option>
+                                            <option value="manual">Manual Dates (Specific List)</option>
                                             <option value="one-time">One Time</option>
                                         </select>
                                     </div>
-                                    <div>
-                                        <label className="block text-sm text-neutral-400 mb-1">
-                                            {recurrence === 'bi-weekly' ? 'Start Day' : 'Day of Month'}
-                                        </label>
-                                        <select
-                                            className="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-white"
-                                            value={day} onChange={e => setDay(Number(e.target.value))} required
-                                        >
-                                            {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
-                                                <option key={d} value={d}>{d}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+
+                                    {recurrence !== 'manual' && (
+                                        <div className="col-span-2">
+                                            <label className="block text-sm text-neutral-400 mb-1">
+                                                {recurrence === 'bi-weekly' || recurrence === 'custom-interval' ? 'Start Day' : 'Day of Month'}
+                                            </label>
+                                            <select
+                                                className="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-white"
+                                                value={day} onChange={e => setDay(Number(e.target.value))} required
+                                            >
+                                                {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                                                    <option key={d} value={d}>{d}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
                                 </div>
+
+                                {recurrence === 'custom-interval' && (
+                                    <div>
+                                        <label className="block text-sm text-neutral-400 mb-1">Repeat Every (Days)</label>
+                                        <input
+                                            type="number" min="1"
+                                            className="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-white"
+                                            value={intervalDays} onChange={e => setIntervalDays(Number(e.target.value))} required
+                                        />
+                                    </div>
+                                )}
+
+                                {recurrence === 'manual' && (
+                                    <div>
+                                        <label className="block text-sm text-neutral-400 mb-2">Selected Dates</label>
+                                        <div className="space-y-2 mb-2">
+                                            {manualDates.map((date, idx) => (
+                                                <div key={idx} className="flex gap-2">
+                                                    <select
+                                                        className="flex-1 bg-black/20 border border-white/10 rounded px-2 py-1 text-white text-sm"
+                                                        value={date.month}
+                                                        onChange={e => updateManualDate(idx, 'month', e.target.value)}
+                                                    >
+                                                        {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map(m => (
+                                                            <option key={m} value={m}>{m}</option>
+                                                        ))}
+                                                    </select>
+                                                    <select
+                                                        className="w-20 bg-black/20 border border-white/10 rounded px-2 py-1 text-white text-sm"
+                                                        value={date.day}
+                                                        onChange={e => updateManualDate(idx, 'day', Number(e.target.value))}
+                                                    >
+                                                        {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                                                            <option key={d} value={d}>{d}</option>
+                                                        ))}
+                                                    </select>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeManualDate(idx)}
+                                                        className="text-neutral-400 hover:text-red-400"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={addManualDate}
+                                            className="text-sm text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                                        >
+                                            <Plus size={14} /> Add Date
+                                        </button>
+                                    </div>
+                                )}
 
                                 {recurrence === 'yearly' && (
                                     <div>
@@ -238,7 +321,7 @@ export const ManageBills = () => {
                                     </div>
                                 )}
 
-                                {recurrence !== 'one-time' && (
+                                {recurrence !== 'one-time' && recurrence !== 'manual' && (
                                     <div>
                                         <label className="block text-sm text-neutral-400 mb-1">Start Month</label>
                                         <select
@@ -252,7 +335,7 @@ export const ManageBills = () => {
                                     </div>
                                 )}
 
-                                {recurrence !== 'one-time' && (
+                                {recurrence !== 'one-time' && recurrence !== 'manual' && (
                                     <>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
