@@ -10,6 +10,7 @@ set -e
 CT_ID=${1:-$(pvesh get /cluster/nextid)}
 CT_PASS=${2:-"password"}
 CT_HOSTNAME="bill-tracker"
+# Using a widely available Debian 12 template
 TEMPLATE_NAME="debian-12-standard_12.2-1_amd64.tar.zst"
 
 # --- Helper Functions ---
@@ -42,7 +43,6 @@ detect_storage() {
 # --- Storage Detection ---
 
 # 1. Detect Template Storage
-# Prefer 'local', but verify it supports 'vztmpl'. If not, auto-detect.
 if verify_storage "local" "vztmpl"; then
     TEMPLATE_STORAGE="local"
 else
@@ -50,13 +50,11 @@ else
 fi
 
 # 2. Detect Container Disk Storage
-# Prefer 'local-lvm', then 'local-zfs', then fallback to auto-detection.
 if verify_storage "local-lvm" "rootdir"; then
     DISK_STORAGE="local-lvm"
 elif verify_storage "local-zfs" "rootdir"; then
     DISK_STORAGE="local-zfs"
 else
-    # Auto-detect any valid storage for rootdir
     DISK_STORAGE=$(detect_storage "rootdir" "local")
 fi
 
@@ -64,7 +62,7 @@ fi
 RAM=1024
 SWAP=512
 CORES=1
-DISK_SIZE="4G"
+DISK_SIZE="4" # Size in GB (integer only for some storages)
 NET_BRIDGE="vmbr0"
 IP_ADDR="dhcp"
 
@@ -78,11 +76,28 @@ echo "   - Disk:     $DISK_STORAGE"
 
 # --- Execution ---
 
-# Ensure Template Exists
-echo "📥 Checking template..."
-pveam download $TEMPLATE_STORAGE $TEMPLATE_NAME || echo "Template might already exist or download failed (proceeding...)"
+# Update template list to ensure we can find the template
+echo "📥 Updating template list..."
+pveam update
+
+# Check if template is already downloaded
+AVAILABLE_TEMPLATE=$(pveam available -section system | grep "debian-12-standard" | head -n 1 | awk '{print $2}')
+if [ -z "$AVAILABLE_TEMPLATE" ]; then
+    echo "⚠️  Could not find specific Debian 12 template in list. Using 'debian-12-standard' generic name."
+    TEMPLATE_NAME="debian-12-standard" 
+else
+    TEMPLATE_NAME="$AVAILABLE_TEMPLATE"
+fi
+
+if ! pveam list $TEMPLATE_STORAGE | grep -q "$TEMPLATE_NAME"; then
+     echo "📥 Downloading template $TEMPLATE_NAME to $TEMPLATE_STORAGE..."
+     pveam download $TEMPLATE_STORAGE $TEMPLATE_NAME
+else
+     echo "✅ Template $TEMPLATE_NAME already exists on $TEMPLATE_STORAGE."
+fi
 
 # Create Container
+echo "🛠️  Creating container..."
 pct create $CT_ID $TEMPLATE_STORAGE:vztmpl/$TEMPLATE_NAME \
     --hostname $CT_HOSTNAME \
     --password $CT_PASS \
