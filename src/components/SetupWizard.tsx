@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Check, ChevronRight, ChevronLeft, Sparkles, Wallet, Calendar, FileText, CheckCircle2, Plus, Trash2 } from 'lucide-react';
 import type { Account, BillTemplate, PaydayTemplate, RecurrenceType } from '../types';
 import { generateEntries } from '../utils/generator';
+import { uuid } from '../utils/uuid';
 
 interface SetupWizardProps {
     onComplete: () => void;
@@ -42,7 +43,7 @@ export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
     const handleAddAccount = () => {
         if (newAccount.trim()) {
             const account: Account = {
-                id: crypto.randomUUID(),
+                id: uuid(),
                 name: newAccount.trim(),
                 order: accounts.length
             };
@@ -65,7 +66,7 @@ export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
 
     const handleAddPayday = () => {
         const template: PaydayTemplate = {
-            id: crypto.randomUUID(),
+            id: uuid(),
             name: pdName,
             recurrence: pdRecurrence,
             day: pdDay,
@@ -85,7 +86,7 @@ export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
         if (!billName || !billAmount || !billAccountId) return;
 
         const template: BillTemplate = {
-            id: crypto.randomUUID(),
+            id: uuid(),
             name: billName,
             recurrence: 'monthly',
             day: billDay,
