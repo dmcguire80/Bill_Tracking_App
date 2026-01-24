@@ -131,22 +131,16 @@ src/
 
 ## Roadmap
 
-### v0.4.0 (Complete)
-- [x] First-use setup wizard
-- [x] Guided onboarding
-- [x] Quick-start templates
-
-### v0.5.0 (Complete)
-- [x] Development Standards Framework
-- [x] NIST-aligned security standards
-- [x] Testing framework (Vitest + Playwright)
-- [x] CI/CD pipeline (GitHub Actions)
-
-### v0.6.0 (Planned)
+### v0.4.0 (Planned)
 - [ ] User authentication (Firebase/Supabase)
 - [ ] Multi-device sync
 - [ ] Cloud data storage
 - [ ] Password reset and account recovery
+
+### v0.5.0 (Planned)
+- [ ] First-use setup wizard
+- [ ] Guided onboarding
+- [ ] Quick-start templates
 
 ### Future Enhancements
 - [ ] Budget tracking
@@ -162,3 +156,24 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the MIT License.
+
+## Changelog
+
+### v0.3.0 (2026-01-24)
+- Added active/inactive template status
+- Implemented end month for automatic deactivation
+- Created unified navigation system
+- Improved UX consistency
+
+### v0.2.0 (2026-01-24)
+- Implemented bill analytics and tracking
+- Added year-to-date insights
+- Bill amount change detection
+- One-time payment tracking in analytics
+
+### v0.1.0 (2026-01-24)
+- Initial release
+- Bill and payday tracking
+- Template management
+- Balance calculations
+- Account management
