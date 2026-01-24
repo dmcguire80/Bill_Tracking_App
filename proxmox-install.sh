@@ -5,118 +5,150 @@
 
 set -e
 
-# --- Configuration & Defaults ---
-# Usage: ./proxmox-install.sh [CT_ID] [PASSWORD]
-CT_ID=${1:-$(pvesh get /cluster/nextid)}
-CT_PASS=${2:-"password"}
-CT_HOSTNAME="bill-tracker"
-# Using a widely available Debian 12 template
-TEMPLATE_NAME="debian-12-standard_12.2-1_amd64.tar.zst"
+# --- UI Functions (Whiptail) ---
 
-# --- Helper Functions ---
-
-# Function to verify if a specific storage supports a specific content type
-verify_storage() {
-    local STORAGE=$1
-    local CONTENT=$2
-    if pvesm status -storage "$STORAGE" -content "$CONTENT" &>/dev/null; then
-        return 0
-    else
-        return 1
-    fi
+msg_info() {
+    echo -e "\033[36m[INFO]\033[0m $1"
 }
 
-# Function to auto-detect valid storage for a content type
-detect_storage() {
-    local CONTENT=$1
-    local FALLBACK=$2
-    # Get the first available storage offering this content type
-    local STORAGE=$(pvesm status -content "$CONTENT" | awk 'NR>1 {print $1}' | head -n 1)
-    
-    if [ -n "$STORAGE" ]; then
-        echo "$STORAGE"
-    else
-        echo "$FALLBACK"
-    fi
+msg_error() {
+    echo -e "\033[31m[ERROR]\033[0m $1"
 }
 
-# --- Storage Detection ---
+function select_storage() {
+  local CLASS=$1
+  local CONTENT
+  local CONTENT_LABEL
+  case $CLASS in
+  container)
+    CONTENT='rootdir'
+    CONTENT_LABEL='Container'
+    ;;
+  template)
+    CONTENT='vztmpl'
+    CONTENT_LABEL='Container template'
+    ;;
+  *) echo "Invalid storage class."; exit 1 ;;
+  esac
 
-# 1. Detect Template Storage
-if verify_storage "local" "vztmpl"; then
-    TEMPLATE_STORAGE="local"
+  # Query all storage locations
+  local -a MENU
+  while read -r line; do
+    local TAG=$(echo $line | awk '{print $1}')
+    local TYPE=$(echo $line | awk '{printf "%-10s", $2}')
+    local FREE=$(echo $line | numfmt --field 4-6 --from-unit=K --to=iec --format %.2f | awk '{printf( "%9sB", $6)}')
+    local ITEM="Type: $TYPE Free: $FREE"
+    MENU+=("$TAG" "$ITEM" "OFF")
+  done < <(pvesm status -content $CONTENT | awk 'NR>1')
+
+  # If no storage found
+  if [ ${#MENU[@]} -eq 0 ]; then
+    msg_error "No valid storage found for $CONTENT_LABEL."
+    exit 1
+  fi
+
+  # Select storage location
+  local STORAGE
+  STORAGE=$(whiptail --title "Storage Selection" --radiolist \
+    "Select storage for $CONTENT_LABEL:\n" \
+    16 60 6 \
+    "${MENU[@]}" 3>&1 1>&2 2>&3) || exit 1
+  
+  echo "$STORAGE"
+}
+
+function input_box() {
+    local TITLE=$1
+    local TEXT=$2
+    local DEFAULT=$3
+    whiptail --title "$TITLE" --inputbox "$TEXT" 10 60 "$DEFAULT" 3>&1 1>&2 2>&3
+}
+
+# --- Main Logic ---
+
+# 1. Welcome
+whiptail --title "Bill Tracking App Installer" --msgbox \
+"Welcome to the automated installer for Bill Tracking App.\n\n\
+This wizard will guide you through creating the LXC container.\n\n\
+Please ensure you have internet connectivity." 12 60
+
+# 2. Container ID
+NEXTID=$(pvesh get /cluster/nextid)
+CT_ID=$(input_box "Container ID" "Enter the LXC Container ID:" "$NEXTID") || exit 1
+
+# 3. Password
+CT_PASS=$(input_box "Password" "Enter the root password for the container:" "password") || exit 1
+
+# 4. Template Storage
+TEMPLATE_STORAGE=$(select_storage template) || exit 1
+
+# 5. Template Selection
+msg_info "Updating template list..."
+pveam update >/dev/null
+
+# Filter for Debian 12 templates
+local -a TEMPLATE_MENU
+while read -r TAG; do
+  TEMPLATE_MENU+=("$TAG" "" "OFF")
+done < <(pveam available -section system | grep "debian-12-standard" | awk '{print $2}' | sort -r)
+
+if [ ${#TEMPLATE_MENU[@]} -eq 0 ]; then
+    # Fallback if specific search fails
+    TEMPLATE_NAME="debian-12-standard_12.2-1_amd64.tar.zst"
 else
-    TEMPLATE_STORAGE=$(detect_storage "vztmpl" "local")
+    TEMPLATE_NAME=$(whiptail --title "Template Selection" --radiolist \
+    "Select Debian 12 Template:\n" \
+    16 60 6 \
+    "${TEMPLATE_MENU[@]}" 3>&1 1>&2 2>&3) || exit 1
 fi
+# Remove quotes if present
+TEMPLATE_NAME=$(echo "$TEMPLATE_NAME" | tr -d '"')
 
-# 2. Detect Container Disk Storage
-if verify_storage "local-lvm" "rootdir"; then
-    DISK_STORAGE="local-lvm"
-elif verify_storage "local-zfs" "rootdir"; then
-    DISK_STORAGE="local-zfs"
-else
-    DISK_STORAGE=$(detect_storage "rootdir" "local")
-fi
+# 6. Disk Storage
+DISK_STORAGE=$(select_storage container) || exit 1
 
-# --- Container Settings ---
-RAM=1024
-SWAP=512
-CORES=1
-DISK_SIZE="4" # Size in GB (integer only for some storages)
-NET_BRIDGE="vmbr0"
-IP_ADDR="dhcp"
-
-# URL to the guest install script
-INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/dmcguire80/Bill_Tracking_App/main/scripts/install.sh"
-
-echo "🚀 Creating LXC Container $CT_ID ($CT_HOSTNAME)..."
-echo "📊 Storage Detected:"
-echo "   - Template: $TEMPLATE_STORAGE"
-echo "   - Disk:     $DISK_STORAGE"
+# 7. Confirmation
+whiptail --title "Confirm Settings" --yesno \
+"Container ID: $CT_ID\n\
+Hostname:     bill-tracker\n\
+Password:     $CT_PASS\n\
+Template:     $TEMPLATE_NAME\n\
+Storage:      $TEMPLATE_STORAGE\n\
+Disk:         $DISK_STORAGE\n\n\
+Proceed with installation?" 16 60 || exit 1
 
 # --- Execution ---
 
-# Update template list to ensure we can find the template
-echo "📥 Updating template list..."
-pveam update
-
-# Check if template is already downloaded
-AVAILABLE_TEMPLATE=$(pveam available -section system | grep "debian-12-standard" | head -n 1 | awk '{print $2}')
-if [ -z "$AVAILABLE_TEMPLATE" ]; then
-    echo "⚠️  Could not find specific Debian 12 template in list. Using 'debian-12-standard' generic name."
-    TEMPLATE_NAME="debian-12-standard" 
-else
-    TEMPLATE_NAME="$AVAILABLE_TEMPLATE"
-fi
-
+# Download Template
 if ! pveam list $TEMPLATE_STORAGE | grep -q "$TEMPLATE_NAME"; then
-     echo "📥 Downloading template $TEMPLATE_NAME to $TEMPLATE_STORAGE..."
+     msg_info "Downloading template $TEMPLATE_NAME to $TEMPLATE_STORAGE..."
      pveam download $TEMPLATE_STORAGE $TEMPLATE_NAME
 else
-     echo "✅ Template $TEMPLATE_NAME already exists on $TEMPLATE_STORAGE."
+     msg_info "Template already exists."
 fi
 
 # Create Container
-echo "🛠️  Creating container..."
+msg_info "Creating LXC Container..."
 pct create $CT_ID $TEMPLATE_STORAGE:vztmpl/$TEMPLATE_NAME \
-    --hostname $CT_HOSTNAME \
-    --password $CT_PASS \
-    --memory $RAM \
-    --swap $SWAP \
-    --cores $CORES \
-    --net0 name=eth0,bridge=$NET_BRIDGE,ip=$IP_ADDR \
-    --rootfs $DISK_STORAGE:$DISK_SIZE \
+    --hostname "bill-tracker" \
+    --password "$CT_PASS" \
+    --memory 1024 \
+    --swap 512 \
+    --cores 1 \
+    --net0 name=eth0,bridge=vmbr0,ip=dhcp \
+    --rootfs $DISK_STORAGE:4 \
     --features nesting=1 \
     --unprivileged 1 \
     --start 1
 
-echo "⏳ Container started. Waiting for network..."
+msg_info "Container started. Waiting for network..."
 sleep 10
 
-echo "📥 Downloading and running install script inside container..."
+# Run Guest Script
+INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/dmcguire80/Bill_Tracking_App/main/scripts/install.sh"
+msg_info "Running installation script..."
 pct exec $CT_ID -- bash -c "curl -fsSL $INSTALL_SCRIPT_URL -o /root/install.sh"
 pct exec $CT_ID -- chmod +x /root/install.sh
 pct exec $CT_ID -- bash -c "/root/install.sh"
 
-echo "✅ Container Setup Complete!"
-echo "📍 Access via Nginx on port 80 at: http://<Container-IP>"
+msg_info "Setup Complete! Access at http://<Container-IP>"
