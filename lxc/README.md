@@ -26,7 +26,7 @@ The deployment logic is organized as follows:
 - **`lxc/`**: Configuration files for the container environment.
   - `setup-lxc.sh`: Installs system dependencies (Node 22, Nginx, PM2).
   - `nginx-site.conf`: Nginx reverse proxy configuration.
-  - `pm2-ecosystem.config.js`: PM2 process management.
+  - `pm2-ecosystem.config.cjs`: PM2 process management.
 - **`scripts/`**: Deployment and maintenance scripts.
   - `install.sh`: The internal guest installation script.
 

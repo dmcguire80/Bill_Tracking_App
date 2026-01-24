@@ -58,7 +58,7 @@ nginx -t && systemctl reload nginx
 # 5. Start with PM2
 msg_info "Starting application with PM2..."
 cd "$INSTALL_DIR"
-pm2 start lxc/pm2-ecosystem.config.js
+pm2 start lxc/pm2-ecosystem.config.cjs
 pm2 save
 pm2 startup | tail -n 1 | bash # Set PM2 to start on boot
 
