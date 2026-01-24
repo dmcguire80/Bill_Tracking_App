@@ -147,6 +147,9 @@ sleep 10
 
 # Run Guest Script
 INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/dmcguire80/Bill_Tracking_App/main/scripts/install.sh"
+msg_info "Installing prerequisites (curl)..."
+pct exec $CT_ID -- bash -c "apt-get update -qq && apt-get install -y curl"
+
 msg_info "Running installation script..."
 pct exec $CT_ID -- bash -c "curl -fsSL $INSTALL_SCRIPT_URL -o /root/install.sh"
 pct exec $CT_ID -- chmod +x /root/install.sh
