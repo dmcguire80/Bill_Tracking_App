@@ -6,26 +6,61 @@
 set -e
 
 # --- Configuration & Defaults ---
-# Usage: ./proxmox-install.sh [CT_ID] [PASSWORD] [DISK_STORAGE]
+# Usage: ./proxmox-install.sh [CT_ID] [PASSWORD]
 CT_ID=${1:-$(pvesh get /cluster/nextid)}
 CT_PASS=${2:-"password"}
 CT_HOSTNAME="bill-tracker"
-
-# Storage Settings
-TEMPLATE_STORAGE="local"
 TEMPLATE_NAME="debian-12-standard_12.2-1_amd64.tar.zst"
 
-# Auto-detect Disk Storage if not provided
-# We look for storage that supports 'rootdir' (LXC disks)
-if [ -z "$3" ]; then
-    DISK_STORAGE=$(pvesm status -content rootdir | awk 'NR>1 {print $1}' | head -n 1)
-    if [ -z "$DISK_STORAGE" ]; then
-        DISK_STORAGE="local" # Fallback to local if detection fails
+# --- Helper Functions ---
+
+# Function to verify if a specific storage supports a specific content type
+verify_storage() {
+    local STORAGE=$1
+    local CONTENT=$2
+    if pvesm status -storage "$STORAGE" -content "$CONTENT" &>/dev/null; then
+        return 0
+    else
+        return 1
     fi
+}
+
+# Function to auto-detect valid storage for a content type
+detect_storage() {
+    local CONTENT=$1
+    local FALLBACK=$2
+    # Get the first available storage offering this content type
+    local STORAGE=$(pvesm status -content "$CONTENT" | awk 'NR>1 {print $1}' | head -n 1)
+    
+    if [ -n "$STORAGE" ]; then
+        echo "$STORAGE"
+    else
+        echo "$FALLBACK"
+    fi
+}
+
+# --- Storage Detection ---
+
+# 1. Detect Template Storage
+# Prefer 'local', but verify it supports 'vztmpl'. If not, auto-detect.
+if verify_storage "local" "vztmpl"; then
+    TEMPLATE_STORAGE="local"
 else
-    DISK_STORAGE=$3
+    TEMPLATE_STORAGE=$(detect_storage "vztmpl" "local")
 fi
 
+# 2. Detect Container Disk Storage
+# Prefer 'local-lvm', then 'local-zfs', then fallback to auto-detection.
+if verify_storage "local-lvm" "rootdir"; then
+    DISK_STORAGE="local-lvm"
+elif verify_storage "local-zfs" "rootdir"; then
+    DISK_STORAGE="local-zfs"
+else
+    # Auto-detect any valid storage for rootdir
+    DISK_STORAGE=$(detect_storage "rootdir" "local")
+fi
+
+# --- Container Settings ---
 RAM=1024
 SWAP=512
 CORES=1
@@ -37,10 +72,17 @@ IP_ADDR="dhcp"
 INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/dmcguire80/Bill_Tracking_App/main/scripts/install.sh"
 
 echo "🚀 Creating LXC Container $CT_ID ($CT_HOSTNAME)..."
-echo "📊 Storage: Template ($TEMPLATE_STORAGE), Disk ($DISK_STORAGE)"
+echo "📊 Storage Detected:"
+echo "   - Template: $TEMPLATE_STORAGE"
+echo "   - Disk:     $DISK_STORAGE"
+
+# --- Execution ---
+
+# Ensure Template Exists
+echo "📥 Checking template..."
+pveam download $TEMPLATE_STORAGE $TEMPLATE_NAME || echo "Template might already exist or download failed (proceeding...)"
 
 # Create Container
-# Note: Use --rootfs $DISK_STORAGE:$DISK_SIZE to avoid 'local' directory errors
 pct create $CT_ID $TEMPLATE_STORAGE:vztmpl/$TEMPLATE_NAME \
     --hostname $CT_HOSTNAME \
     --password $CT_PASS \
