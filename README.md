@@ -144,23 +144,25 @@ src/
 
 ## Roadmap
 
-### v0.4.0 (Planned)
-- [ ] User authentication (Firebase/Supabase)
-- [ ] Multi-device sync
-- [ ] Cloud data storage
-- [ ] Password reset and account recovery
+### Current Version (v0.7.x)
+- [x] First-use setup wizard
+- [x] Server-side data persistence (JSON)
+- [x] Automated backups
+- [x] Mobile optimizations (Condensed headers, sticky tables)
+- [x] Deployment automation (LXC, NPM, Cloudflare)
 
-### v0.5.0 (Planned)
-- [ ] First-use setup wizard
-- [ ] Guided onboarding
-- [ ] Quick-start templates
+### v0.8.0 (Planned) - Security & Multi-User
+- [ ] User authentication (Login/Signup)
+- [ ] Multi-user support (Separate data per user)
+- [ ] Password protection for sensitive actions
+- [ ] Session management
 
 ### Future Enhancements
-- [ ] Budget tracking
-- [ ] Spending insights
+- [ ] Budget tracking & spending limits
+- [ ] Visual spending insights/graphs
 - [ ] Export to CSV/PDF
 - [ ] Recurring payment reminders
-- [ ] Mobile app (React Native)
+- [ ] Mobile app (wrapper or React Native)
 
 ## Contributing
 
