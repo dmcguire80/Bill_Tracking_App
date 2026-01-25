@@ -35,6 +35,7 @@ interface DataContextType {
     importData: (data: any) => void;
     backupSettings: BackupSettings;
     updateBackupSettings: (settings: BackupSettings) => void;
+    loading: boolean;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -89,22 +90,106 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         return migrateTemplates(parsed);
     });
 
-    // Persistence
+    const [backupSettings, setBackupSettings] = useState<BackupSettings>(() => {
+        const stored = localStorage.getItem('backupSettings');
+        return stored ? JSON.parse(stored) : { enabled: false, interval: 'daily', lastBackup: null };
+    });
+
+    const [loading, setLoading] = useState(true);
+
+    const updateBackupSettings = (settings: BackupSettings) => {
+        setBackupSettings(settings);
+    };
+
+    // Initial Load & Sync
     useEffect(() => {
+        const loadData = async () => {
+            try {
+                // 1. Try to fetch from server
+                const res = await fetch('/api/data');
+
+                if (res.ok) {
+                    const serverData = await res.json();
+                    setEntries(serverData.entries || []);
+                    setAccounts(serverData.accounts || DEFAULT_ACCOUNTS);
+                    setTemplates(migrateTemplates(serverData.templates || []));
+                    setPaydayTemplates(migrateTemplates(serverData.paydayTemplates || []));
+                    setBackupSettings(serverData.backupSettings || { enabled: false, interval: 'daily', lastBackup: null });
+                } else if (res.status === 404) {
+                    // 2. No server data (Fresh install or migration)
+                    // Check if we have local data to migrate
+                    const localEntries = localStorage.getItem('entries');
+                    const localAccounts = localStorage.getItem('accounts');
+
+                    if (localEntries || localAccounts) {
+                        console.log('Migrating local data to server...');
+                        // Use existing local state (already initialized from localStorage by useState)
+                        const migrationData = {
+                            entries,
+                            accounts,
+                            templates,
+                            paydayTemplates,
+                            backupSettings
+                        };
+
+                        await fetch('/api/data', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(migrationData)
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load data:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadData();
+    }, []); // Run once on mount
+
+    // Auto-Save to Server (Debounced)
+    useEffect(() => {
+        if (loading) return; // Don't save while initial loading
+
+        const saveData = async () => {
+            try {
+                const data = {
+                    entries,
+                    accounts,
+                    templates,
+                    paydayTemplates,
+                    backupSettings
+                };
+
+                await fetch('/api/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } catch (err) {
+                console.error('Auto-save failed:', err);
+            }
+        };
+
+        const timeoutId = setTimeout(saveData, 1000); // Debounce 1s
+        return () => clearTimeout(timeoutId);
+
+    }, [entries, accounts, templates, paydayTemplates, backupSettings, loading]);
+
+    // Legacy LOCAL STORAGE Persistence (Keep as fallback/cache or remove?)
+    // Removing strictly to force server source-of-truth as requested.
+    // But we might want to keep it mirrored for offline safety? 
+    // For now, let's keep mirroring to localStorage but ONLY for offline startup resilience if server is down.
+    useEffect(() => {
+        if (loading) return;
         localStorage.setItem('entries', JSON.stringify(entries));
-    }, [entries]);
-
-    useEffect(() => {
         localStorage.setItem('accounts', JSON.stringify(accounts));
-    }, [accounts]);
-
-    useEffect(() => {
         localStorage.setItem('templates', JSON.stringify(templates));
-    }, [templates]);
-
-    useEffect(() => {
         localStorage.setItem('paydayTemplates', JSON.stringify(paydayTemplates));
-    }, [paydayTemplates]);
+        localStorage.setItem('backupSettings', JSON.stringify(backupSettings));
+    }, [entries, accounts, templates, paydayTemplates, backupSettings, loading]);
 
     // Actions
     const addEntry = (entry: Entry) => setEntries(prev => [...prev, entry]);
@@ -205,19 +290,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    // Backup Settings
-    const [backupSettings, setBackupSettings] = useState<BackupSettings>(() => {
-        const stored = localStorage.getItem('backupSettings');
-        return stored ? JSON.parse(stored) : { enabled: false, interval: 'daily', lastBackup: null };
-    });
 
-    useEffect(() => {
-        localStorage.setItem('backupSettings', JSON.stringify(backupSettings));
-    }, [backupSettings]);
-
-    const updateBackupSettings = (settings: BackupSettings) => {
-        setBackupSettings(settings);
-    };
 
     // Auto-Backup Logic
     useEffect(() => {
@@ -309,7 +382,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
                 if (Array.isArray(data.paydayTemplates)) setPaydayTemplates(migrateTemplates(data.paydayTemplates));
             },
             backupSettings,
-            updateBackupSettings
+            updateBackupSettings,
+            loading
         }}>
             {children}
         </DataContext.Provider>
