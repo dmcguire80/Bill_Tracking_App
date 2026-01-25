@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.9.5 - Automation
+### Added
+- **Update Script**: Added `scripts/update.sh` to automate manual server updates.
+
 ## v0.9.4 - Hotfix
 ### Fixed
 - **Build Error**: Fixed syntax error in DataManagement page (missing closing brace).

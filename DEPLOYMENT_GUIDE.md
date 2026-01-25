@@ -12,31 +12,24 @@ Legacy server-side code (Node.js/Express) has been removed.
 
 Because the old auto-update scripts were removed, use these commands to update your server:
 
-### 1. Manual Update Command
-Run this on your server (inside the application directory, e.g., `/opt/bill-tracker`):
+### 1. The Easy Way (Script)
+We have included an update script in the repository.
 
 ```bash
-# 1. Get latest code
-git pull origin main
-
-# 2. Install dependencies (only if package.json changed)
-npm install
-
-# 3. Build the static app
-npm run build
-
-# 4. Deploy to Nginx
-# (Assuming your nginx root is /var/www/html or similar)
-rm -rf /var/www/html/*
-cp -r dist/* /var/www/html/
+# Run manually
+./scripts/update.sh
 ```
 
-### 2. Creating a new 'update' alias
-You can recreate your `update` alias by adding this to your `~/.bashrc`:
+### 2. Auto-Update (Cron Job)
+To check for updates automatically every night at 4am:
 
 ```bash
-alias update='git pull && npm install && npm run build && rm -rf /var/www/html/* && cp -r dist/* /var/www/html/ && echo "Update Complete!"'
+crontab -e
+# Add this line:
+0 4 * * * cd /opt/bill-tracker && ./scripts/update.sh >> /var/log/bill-tracker-update.log 2>&1
 ```
+
+### 3. Manual Commands (Under the hood)
 
 ## Application Container (Proxmox LXC)
 *   **OS**: Debian/Ubuntu
