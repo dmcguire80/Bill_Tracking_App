@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.9.7 - Self-Hosted CD
+### Changed
+- **CD Workflow**: Switched from SSH-push to Self-Hosted Runner (Pull) for better security.
+
 ## v0.9.6 - CD Pipeline
 ### Added
 - **GitHub Actions**: Added `.github/workflows/deploy.yml` for automated SSH deployment on tag push.

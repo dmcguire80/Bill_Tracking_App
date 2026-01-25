@@ -35,24 +35,29 @@ Run this single command:
    `0 4 * * * cd /opt/bill-tracker && ./scripts/update.sh >> /var/log/bill-tracker-update.log 2>&1`
 3. Save and exit (`Esc` -> `:wq` for vim, or `Ctrl+X` -> `Y` for nano).
 
-### 3. Continuous Deployment (GitHub Actions)
-Fully automated "Push-to-Deploy". When you push a new tag (e.g., `v0.9.6`), GitHub will log into your server and run the update for you.
+### 3. Continuous Deployment (Self-Hosted Runner)
+This method allows the server to "pull" updates automatically without exposing SSH to the internet.
 
-**Setup Instructions:**
-1.  Go to your GitHub Repo -> **Settings** -> **Secrets and variables** -> **Actions**.
-2.  Click **New repository secret**.
-3.  Add the following secrets:
-    *   `SSH_HOST`: Your server's public IP or hostname (e.g., `home.dmcguire.com`).
-    *   `SSH_USERNAME`: The user to log in as (e.g., `root`).
-    *   `SSH_KEY`: Your private SSH key (contents of `~/.ssh/id_rsa`).
-        *   *Note: This key must authorize access to the server without a password.*
+**1. Create the Runner on your Server:**
+Go to your GitHub Repo -> **Settings** -> **Actions** -> **Runners** -> **New self-hosted runner**.
+Select **Linux** and run the provided commands on your server.
 
-**How to trigger:**
+*Tip: If running as root (which you probably are), use this command to configure:*
 ```bash
-git tag v0.9.6
-git push origin v0.9.6
-# GitHub Action will start automatically
+export RUNNER_ALLOW_RUNASROOT=1
+./config.sh --url https://github.com/dmcguire80/Bill_Tracking_App --token <YOUR_TOKEN>
 ```
+
+**2. Install as a Service:**
+Once configured, install it so it runs automatically on boot:
+```bash
+sudo ./svc.sh install
+sudo ./svc.sh start
+```
+
+**3. Global vs Local Runners:**
+*   **Local**: Installed inside *this* container. Can only deploy *this* app.
+*   **Global**: To manage *all* your LXCs, you would install the runner on a central "DevOps" container and give it SSH access to the others. For now, stick to **Local**.
 
 ## Application Container (Proxmox LXC)
 *   **OS**: Debian/Ubuntu

@@ -7,16 +7,17 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to VPS
-    runs-on: ubuntu-latest
+    name: Deploy on Local Runner
+    runs-on: self-hosted
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@master
+      - name: Checkout Code
+        uses: actions/checkout@v4
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: 22
-          script: |
-            cd /opt/bill-tracker
-            ./scripts/update.sh
+          clean: false  # Don't wipe the directory, just update it
+
+      - name: Run Update Script
+        run: |
+          chmod +x scripts/update.sh
+          # Allow running as root if configured
+          export RUNNER_ALLOW_RUNASROOT=1
+          ./scripts/update.sh
