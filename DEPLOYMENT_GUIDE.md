@@ -1,54 +1,52 @@
 # Deployment & Infrastructure Guide
 
-This document outlines the standard deployment architecture for our self-hosted applications. It enables external secure access via Cloudflare Zero Trust while maintaining internal routing speeds via local DNS.
+This application has been migrated to a **Static Single Page Application (SPA)** architecture backed by Firebase.
+Legacy server-side code (Node.js/Express) has been removed.
 
 ## Infrastructure Stack
 1.  **Host**: Proxmox VE (LXC Container)
-2.  **Internal Proxy**: Nginx Proxy Manager (NPM)
-3.  **External Access**: Cloudflare Zero Trust (Tunnel)
-4.  **Internal DNS**: Unifi Network (Local DNS Record)
+2.  **Web Server**: Nginx (serving static files)
+3.  **Backend**: Firebase (Cloud Firestore & Auth)
 
-## 1. Application Container (Proxmox LXC)
+## Deployment Instructions (Updating the App)
+
+Because the old auto-update scripts were removed, use these commands to update your server:
+
+### 1. Manual Update Command
+Run this on your server (inside the application directory, e.g., `/opt/bill-tracker`):
+
+```bash
+# 1. Get latest code
+git pull origin main
+
+# 2. Install dependencies (only if package.json changed)
+npm install
+
+# 3. Build the static app
+npm run build
+
+# 4. Deploy to Nginx
+# (Assuming your nginx root is /var/www/html or similar)
+rm -rf /var/www/html/*
+cp -r dist/* /var/www/html/
+```
+
+### 2. Creating a new 'update' alias
+You can recreate your `update` alias by adding this to your `~/.bashrc`:
+
+```bash
+alias update='git pull && npm install && npm run build && rm -rf /var/www/html/* && cp -r dist/* /var/www/html/ && echo "Update Complete!"'
+```
+
+## Application Container (Proxmox LXC)
 *   **OS**: Debian/Ubuntu
-*   **Internal Server**: Node.js + Express (Port 3000)
-*   **Local Proxy**: Nginx (Port 80)
-*   **Configuration**:
-    *   Nginx listens on Port 80.
-    *   Proxies API requests (`/api`) to `localhost:3000`.
-    *   Serves static frontend files (`/dist`) directly.
+*   **Port**: 80 (Nginx)
+*   **Proxying**: None required (App connects directly to Firebase).
 
-## 2. Nginx Proxy Manager (NPM) Configuration
-This is the "Bridge" between your network and the application container.
-
-*   **Scheme**: `http`
-*   **Forward Hostname / IP**: `<Container_IP>` (e.g., `10.10.x.x`)
-*   **Forward Port**: `80` (Points to Container's Nginx, NOT the Node app)
-*   **SSL**:
-    *   **Force SSL**: **DISABLED** (Critical: Cloudflare handles SSL; enabling this causes redirect loops).
-    *   **HTTP/2 Support**: Enabled.
-*   **Advanced**:
-    *   **Websockets Support**: Disabled (unless app uses WS).
-    *   **Block Common Exploits**: Enabled.
-
-## 3. Cloudflare Zero Trust (External Access)
-Secure remote access without opening router ports.
-
-*   **Tunnel Config**:
-    *   **Service**: `http://<NPM_IP>:80`
-    *   **Host Header**: `<app>.<your-domain>.com` (Matches the domain in NPM)
-*   **Public Hostname**:
-    *   **Subdomain**: `<app>` (e.g., `bills`)
-    *   **Domain**: `<your-domain>.com`
-*   **Result**: Cloudflare sends traffic to NPM, which routes to the Container.
-
-## 4. Unifi / Local DNS (Internal Access)
-Ensures local devices connect directly to NPM instead of looping out to Cloudflare.
-
-*   **Type**: A Record (Host)
-*   **Hostname**: `<app>`
-*   **Domain**: `<your-domain>.com`
-*   **IP Address**: `<NPM_IP>` (The IP of the Nginx Proxy Manager container)
-
-## Summary Data Flow
-*   **External User** -> Cloudflare (HTTPS) -> Tunnel -> NPM (HTTP) -> Container Nginx (HTTP) -> App
-*   **Internal User** -> Local DNS -> NPM (HTTP) -> Container Nginx (HTTP) -> App
+## Troubleshooting
+*   **404 on Refresh**: Ensure Nginx is configured to redirect all 404s to `index.html` (SPA routing).
+    ```nginx
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+    ```

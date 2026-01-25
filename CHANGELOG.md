@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.9.4 - Hotfix
+### Fixed
+- **Build Error**: Fixed syntax error in DataManagement page (missing closing brace).
+- **Deployment**: Updated Deployment Guide with new static build instructions.
+
 ## v0.9.3 - Privacy & Cleanup
 ### Added
 - **Delete Account**: Users can now permanently delete their account and all data (GDPR compliance).

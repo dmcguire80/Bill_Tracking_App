@@ -42,8 +42,6 @@ interface DataContextType {
     deletePaydayTemplate: (id: string) => void;
     exportData: () => any;
     importData: (data: any) => Promise<void>;
-    exportData: () => any;
-    importData: (data: any) => Promise<void>;
     deleteAccountData: () => Promise<void>;
     hideOldData: boolean;
     setHideOldData: (hide: boolean) => void;
@@ -328,7 +326,6 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             updatePaydayTemplate,
             deletePaydayTemplate,
             exportData: () => ({ entries, accounts, templates, paydayTemplates }),
-            importData,
             importData,
             deleteAccountData,
             hideOldData,
