@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.9.8 - CD Trigger
+### Changed
+- **Trigger**: Empty release to trigger the Self-Hosted Runner.
+
 ## v0.9.7 - Self-Hosted CD
 ### Changed
 - **CD Workflow**: Switched from SSH-push to Self-Hosted Runner (Pull) for better security.
