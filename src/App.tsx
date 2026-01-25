@@ -162,8 +162,8 @@ import { ForgotPassword } from './pages/ForgotPassword';
 function App() {
   const { accounts, loading, importData } = useData();
 
-  const handleSetupComplete = (data: any) => {
-    importData(data);
+  const handleSetupComplete = async (data: any) => {
+    await importData(data);
   };
 
   if (loading) {
