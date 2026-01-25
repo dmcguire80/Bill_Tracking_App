@@ -31,7 +31,7 @@ export const Navigation = () => {
                     </Link>
                 ))}
             </div>
-            <span className="text-xs text-neutral-600 font-mono">v0.7.1</span>
+            <span className="text-xs text-neutral-600 font-mono">v0.7.2</span>
         </nav>
     );
 };

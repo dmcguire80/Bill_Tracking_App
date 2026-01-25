@@ -33,7 +33,7 @@ msg_info "Deploying version: $LATEST_TAG"
 if [ -d "$INSTALL_DIR" ]; then
     msg_info "Updating application..."
     cd "$INSTALL_DIR"
-    git fetch --all --tags
+    git fetch --all --tags --force --prune
     git checkout -f "tags/$LATEST_TAG" 2>/dev/null || git checkout -f "$LATEST_TAG"
 else
     msg_info "Fresh installation..."
