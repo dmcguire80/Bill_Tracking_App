@@ -55,8 +55,10 @@ export const BillForm = ({ initialData, onSave, onClose }: BillFormProps) => {
         setAmounts(prev => {
             const next = { ...prev };
             if (isNaN(numValue) || numValue === 0) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 delete next[account as any];
             } else {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 next[account as any] = numValue;
             }
             return next;

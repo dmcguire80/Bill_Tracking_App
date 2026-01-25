@@ -20,9 +20,10 @@ export const Login = () => {
             setLoading(true);
             await login(email, password);
             navigate('/');
-        } catch (err: any) {
-            console.error(err);
-            if (err.code === 'auth/invalid-credential') {
+        } catch (err: unknown) {
+            const error = err as { code?: string; message?: string };
+            console.error(error);
+            if (error.code === 'auth/invalid-credential') {
                 setError('Invalid email or password.');
             } else {
                 setError('Failed to log in. Please try again.');

@@ -4,8 +4,6 @@ import { Navigation } from '../components/Navigation';
 import { SettingsNav } from '../components/SettingsNav';
 import { Download, Upload, AlertTriangle, CheckCircle, FileJson } from 'lucide-react';
 
-import { MigrationTool } from '../components/MigrationTool';
-
 export const DataManagement = () => {
     const { exportData, importData, backupSettings, updateBackupSettings } = useData();
     const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -71,9 +69,6 @@ export const DataManagement = () => {
                         <h2 className="text-2xl font-bold text-white mb-2">Data Management</h2>
                         <p className="text-neutral-400">Back up your data or restore from a previous backup.</p>
                     </header>
-
-                    {/* Migration Tool */}
-                    <MigrationTool />
 
                     <div className="grid gap-6 md:grid-cols-2">
                         {/* Auto-Backup Section */}
@@ -195,10 +190,10 @@ export const DataManagement = () => {
                             )}
                         </div>
                     </div>
-                </div>
-            </div>
+                </div >
+            </div >
             <div className="text-center mt-12 mb-8">
-                <span className="text-xs text-slate-500 font-mono">v0.7.13</span>
+                <span className="text-xs text-slate-500 font-mono">v0.8.5</span>
             </div>
         </>
     );

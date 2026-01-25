@@ -84,7 +84,7 @@ export const generateEntries = (templates: BillTemplate[], paydayTemplates: Payd
             }
 
             // Start from the first occurrence in the start month
-            let currentDate = new Date(year, startMonthIndex, template.day);
+            const currentDate = new Date(year, startMonthIndex, template.day);
 
             while (currentDate.getFullYear() === year) {
                 const monthStr = MONTHS[currentDate.getMonth()];

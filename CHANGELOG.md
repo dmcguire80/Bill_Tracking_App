@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.8.5 - Cleanup Release
+### Removed
+- **Migration Tool**: Removed the legacy "Migrate to Cloud" tool and component as migration is complete.
+
 ## v0.8.4 - Performance Patch
 ### Fixed
 - **Optimized Import**: Switched Data Migration tool to use Firestore Batch Writes (limit 500 ops). This resolves the timeout/hanging issue during the "Creating..." step of setup, making migration nearly instant.
@@ -21,13 +25,13 @@ All notable changes to this project will be documented in this file.
 - **Startup Crash**: Resolved a "Solid Blue Screen" startup crash caused by incorrect React Context nesting (`AuthProvider` vs `DataProvider`).
 
 ## v0.8.0 - Security & Cloud Release
-### Major Features
+### Added
 - **Authentication**: Added secure Login, Signup, and Forgot Password flows.
 - **Cloud Sync**: Migrated from local JSON storage to Google Cloud Firestore (Real-time sync).
 - **Multi-User Support**: Data is now isolated per user account.
 - **Migration Tool**: Added utility to migrate legacy server data to the cloud.
 
-### Infrastructure
+### Changed
 - **Protected Routes**: Dashboard and Settings are now guarded by authentication.
 - **Firebase Integration**: Full SDK setup with Auth and Firestore.
 
@@ -49,7 +53,7 @@ All notable changes to this project will be documented in this file.
 
 ## v0.7.10 - Server Process Fix
 ### Fixed
-- **Server Execution**: Updated `install.sh` to forcefully restart the PM2 process, ensuring the application switches from the static `serve` fallback to the full `server.js` backend. This resolved API 404 errors preventing cross-device sync.
+- **Server Execution**: Updated `install.sh` to forcefully restart the PM2 process, ensuring the application switches from the static `serve` fallback to the full `server.js` backend. This resolves API 404 errors preventing cross-device sync.
 
 ## v0.7.9 - Backup Restoration
 ### Added
@@ -71,20 +75,20 @@ All notable changes to this project will be documented in this file.
 - **Installation**: Improved `install.sh` git tag fetching to handle detached states and force updates.
 
 ## v0.3.0 - UX & Navigation
-### Features
+### Added
 - **Active Status**: Added active/inactive template status.
 - **Auto-Deactivation**: Implemented end month for automatic deactivation.
 - **Unified Navigation**: Created unified navigation system for improved UX consistency.
 
 ## v0.2.0 - Analytics Release
-### Features
+### Added
 - **Bill Analytics**: Year-to-date paid vs planned tracking.
 - **Amount Change Detection**: Visual indicators for bill amount changes with percentages.
 - **Historical Analysis**: Year selector for historical financial review.
 - **Insights**: Status badges (All Paid, In Progress, None Paid) and change notifications.
 
 ## v0.1.0 - Initial Release
-### Features
+### Added
 - **Core Tracking**: Bill and payday tracking.
 - **Templates**: Recurring bill template management.
 - **Balances**: Running balance calculations.

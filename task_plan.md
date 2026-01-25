@@ -67,48 +67,48 @@ Phase 1
 - [x] Implement Account Columns and Totals
 - **Status:** complete
 
-### Phase 4: Admin & Automation (New)
+### Phase 4: Admin & Automation
 <!--
   WHAT: Admin pages and auto-generation.
 -->
-- [ ] Install React Router & Setup Layout
-- [ ] Define BillTemplate Data Model
-- [ ] Create Manage Bills Page
-- [ ] Implement Generation Logic (Bi-weekly/Monthly/Yearly)
-- [ ] Integrate Generator with Dashboard
-- **Status:** pending
-
-### Phase 5: Logic & calculations
-<!-- 
-  WHAT: Verify everything works and meets requirements.
-  WHY: Catching issues early saves time. Document test results in progress.md.
--->
-- [x] Implement Payday balance logic (Green/Red indicators)
-- [x] Implement Totals calculation per Pay period
-- [x] Implement "Remaining" balance subtraction logic
-- [x] Verify logic against spreadsheet examples
+- [x] Install React Router & Setup Layout
+- [x] Define BillTemplate Data Model
+- [x] Create Manage Bills Page
+- [x] Implement Generation Logic (Bi-weekly/Monthly/Yearly)
+- [x] Integrate Generator with Dashboard
 - **Status:** complete
 
-### Phase 5: CRUD Features (New)
+### Phase 5: CRUD Features
 <!--
   WHAT: Add ability to create, edit, delete data.
   WHY: User needs to manage data, not just view it.
 -->
 - [x] Implement Add/Edit Bill Modal
 - [x] Implement Add/Edit Payday Modal
-- [ ] Implement Manage Accounts Modal
-- [ ] Implement "Auto-fill" or "Template" feature for bulk entry
-- **Status:** in_progress
+- [x] Implement Manage Accounts Modal
+- [x] Implement "Auto-fill" or "Template" feature for bulk entry
+- **Status:** complete
 
-### Phase 6: Delivery & Polish
+### Phase 6: Documentation & Handoff
+<!-- 
+  WHAT: Create comprehensive documentation for future developers and users.
+-->
+- [x] Standardize Release Notes in CHANGELOG.md
+- [x] Create ARCHITECTURE.md
+- [x] Create CONTRIBUTING.md
+- [x] Create DEPLOYMENT_GUIDE.md
+- [x] Update README.md with links to new docs
+- **Status:** complete
+
+### Phase 7: Delivery & Polish
 <!-- 
   WHAT: Final review and handoff to user.
   WHY: Ensures nothing is forgotten and deliverables are complete.
 -->
-- [ ] Review UI aesthetics (Modern, Premium look)
-- [ ] Ensure persistence (Local Storage for MVP)
-- [ ] Final walkthrough
-- **Status:** pending
+- [x] Review UI aesthetics (Modern, Premium look)
+- [x] Ensure persistence (Firestore Cloud Sync)
+- [x] Final walkthrough
+- **Status:** complete
 
 ## Key Questions
 <!-- 
@@ -118,9 +118,9 @@ Phase 1
     1. Should tasks persist between sessions? (Yes - need file storage)
     2. What format for storing tasks? (JSON file)
 -->
-1. How does the "Payday" row logic work exactly? (It seems to be a reset or income point).
-2. What are the specific rules for the account columns (CFCU, Apple, etc.)? Are they separate bank accounts?
-3. Should data persist to a backend or just local storage for now? (Assumption: Local Storage for MVP/Demo).
+1. How does the "Payday" row logic work exactly? (RESOLVED: Reset point for running balance).
+2. What are the specific rules for the account columns? (RESOLVED: Separate payment accounts).
+3. Should data persist to a backend? (RESOLVED: Yes, Firestore per user).
 
 ## Decisions Made
 <!-- 

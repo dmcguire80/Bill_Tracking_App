@@ -20,7 +20,7 @@ export const ForgotPassword = () => {
             setLoading(true);
             await resetPassword(email);
             setMessage('Check your email for password reset instructions.');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
             setError('Failed to send reset email. Please verify the address.');
         } finally {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { Entry, BillTemplate, Account, PaydayTemplate, Bill } from '../types';
 import { generateEntries } from '../utils/generator';
@@ -310,6 +311,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useData = () => {
     const context = useContext(DataContext);
     if (!context) throw new Error('useData must be used within a DataProvider');

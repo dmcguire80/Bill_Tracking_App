@@ -24,15 +24,36 @@ npm run build
 This generates the `dist/` folder served by Nginx/Express.
 
 ## Release Process
+
+We enforce a strict standard for release notes. All releases **must** act as a snapshot of the `CHANGELOG.md`.
+
+### 1. Update Changelog
+Before tagging a release, you **must** add an entry to `CHANGELOG.md` following this exact format:
+
+```markdown
+## vX.X.X - <Core Change Summary>
+### <Type> (e.g., Fixed, Added, Changed)
+- **<Component>**: <Description of change>
+```
+
+**Example:**
+```markdown
+## v0.8.4 - Performance Patch
+### Fixed
+- **Optimized Import**: Switched Data Migration tool...
+```
+
+### 2. Tag & Push
+When you push the tag, the CI workflow will automatically read the `CHANGELOG.md` entry for that version and use it to populate the Release Title and Body.
+
 1.  **Bump Version**: Update `package.json` version.
-2.  **Update Navigation**: Update displayed version in `src/pages/DataManagement.tsx` (or `Navigation.tsx` in older versions).
-3.  **Tag & Push**:
+2.  **Update Navigation**: Update displayed version in `src/pages/DataManagement.tsx`.
+3.  **Commit, Tag & Push**:
     ```bash
-    git commit -am "chore: release v0.X.X"
-    git tag v0.X.X
+    git commit -am "chore: release vX.X.X"
+    git tag vX.X.X
     git push origin main --tags
     ```
-4.  **Deploy**: Run `update` on the server.
 
 ## Code Style
 - Use **TypeScript** for all new logic.

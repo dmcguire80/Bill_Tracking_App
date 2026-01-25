@@ -41,8 +41,10 @@ export const PaydayForm = ({ initialData, onSave, onClose }: PaydayFormProps) =>
         setBalances(prev => {
             const next = { ...prev };
             if (isNaN(numValue)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 delete next[account as any];
             } else {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 next[account as any] = numValue;
             }
             return next;

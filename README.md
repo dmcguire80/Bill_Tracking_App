@@ -173,23 +173,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 This project is licensed under the MIT License.
 
-## Changelog
 
-### v0.3.0 (2026-01-24)
-- Added active/inactive template status
-- Implemented end month for automatic deactivation
-- Created unified navigation system
-- Improved UX consistency
-
-### v0.2.0 (2026-01-24)
-- Implemented bill analytics and tracking
-- Added year-to-date insights
-- Bill amount change detection
-- One-time payment tracking in analytics
-
-### v0.1.0 (2026-01-24)
-- Initial release
-- Bill and payday tracking
-- Template management
-- Balance calculations
-- Account management

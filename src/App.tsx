@@ -162,6 +162,7 @@ import { ForgotPassword } from './pages/ForgotPassword';
 function App() {
   const { accounts, loading, importData } = useData();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSetupComplete = async (data: any) => {
     await importData(data);
   };

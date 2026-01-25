@@ -6,7 +6,7 @@ import { uuid } from '../utils/uuid';
 
 
 interface SetupWizardProps {
-    onComplete: (data: any) => void;
+    onComplete: (data: unknown) => void;
 }
 
 export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
@@ -138,9 +138,10 @@ export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
                 paydayTemplates,
                 entries
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
-            alert(`Setup failed: ${error.message}`);
+            const msg = error instanceof Error ? error.message : 'Unknown error';
+            alert(`Setup failed: ${msg}`);
             setIsSubmitting(false);
         }
     };
@@ -222,7 +223,7 @@ export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
                                                     if (confirm('Restore data from this backup? This will overwrite any current data.')) {
                                                         onComplete(data);
                                                     }
-                                                } catch (err) {
+                                                } catch {
                                                     alert('Invalid backup file');
                                                 }
                                             };

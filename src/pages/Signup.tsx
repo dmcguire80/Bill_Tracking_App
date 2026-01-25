@@ -30,9 +30,10 @@ export const Signup = () => {
             setLoading(true);
             await signup(email, password, displayName);
             navigate('/');
-        } catch (err: any) {
-            console.error(err);
-            if (err.code === 'auth/email-already-in-use') {
+        } catch (err: unknown) {
+            const error = err as { code?: string; message?: string };
+            console.error(error);
+            if (error.code === 'auth/email-already-in-use') {
                 setError('Typically, this email is already in use.');
             } else {
                 setError('Failed to create account. Please try again.');
