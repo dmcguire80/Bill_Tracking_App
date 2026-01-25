@@ -153,7 +153,7 @@ function Dashboard() {
 }
 
 
-import { AuthProvider } from './context/AuthContext';
+// AuthProvider is now in main.tsx
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
@@ -179,58 +179,56 @@ function App() {
 
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          {/* Public Auth Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Routes>
+        {/* Public Auth Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
-          {/* Setup Route (Semi-Protected) */}
-          <Route path="/setup" element={
-            <ProtectedRoute>
-              {accounts.length > 0 ? <Navigate to="/" replace /> : <SetupWizard onComplete={handleSetupComplete} />}
-            </ProtectedRoute>
-          } />
+        {/* Setup Route (Semi-Protected) */}
+        <Route path="/setup" element={
+          <ProtectedRoute>
+            {accounts.length > 0 ? <Navigate to="/" replace /> : <SetupWizard onComplete={handleSetupComplete} />}
+          </ProtectedRoute>
+        } />
 
-          {/* Protected App Routes */}
-          <Route path="/" element={
-            <ProtectedRoute>
-              {accounts.length === 0 ? <Navigate to="/setup" replace /> : (
-                <Layout>
-                  <Dashboard />
-                </Layout>
-              )}
-            </ProtectedRoute>
-          } />
+        {/* Protected App Routes */}
+        <Route path="/" element={
+          <ProtectedRoute>
+            {accounts.length === 0 ? <Navigate to="/setup" replace /> : (
+              <Layout>
+                <Dashboard />
+              </Layout>
+            )}
+          </ProtectedRoute>
+        } />
 
-          <Route path="/analytics" element={
-            <ProtectedRoute>
-              {accounts.length === 0 ? <Navigate to="/setup" replace /> : (
-                <Layout>
-                  <Analytics />
-                </Layout>
-              )}
-            </ProtectedRoute>
-          } />
+        <Route path="/analytics" element={
+          <ProtectedRoute>
+            {accounts.length === 0 ? <Navigate to="/setup" replace /> : (
+              <Layout>
+                <Analytics />
+              </Layout>
+            )}
+          </ProtectedRoute>
+        } />
 
-          <Route path="/settings/*" element={
-            <ProtectedRoute>
-              {accounts.length === 0 ? <Navigate to="/setup" replace /> : (
-                <Layout>
-                  <Routes>
-                    <Route path="/" element={<Navigate to="bills" replace />} />
-                    <Route path="bills" element={<ManageBills />} />
-                    <Route path="accounts" element={<ManageAccounts />} />
-                    <Route path="paydays" element={<ManagePaydays />} />
-                    <Route path="data" element={<DataManagement />} />
-                  </Routes>
-                </Layout>
-              )}
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </AuthProvider>
+        <Route path="/settings/*" element={
+          <ProtectedRoute>
+            {accounts.length === 0 ? <Navigate to="/setup" replace /> : (
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<Navigate to="bills" replace />} />
+                  <Route path="bills" element={<ManageBills />} />
+                  <Route path="accounts" element={<ManageAccounts />} />
+                  <Route path="paydays" element={<ManagePaydays />} />
+                  <Route path="data" element={<DataManagement />} />
+                </Routes>
+              </Layout>
+            )}
+          </ProtectedRoute>
+        } />
+      </Routes>
     </BrowserRouter>
   );
 }
