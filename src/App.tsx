@@ -153,6 +153,12 @@ function Dashboard() {
 }
 
 
+import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { Login } from './pages/Login';
+import { Signup } from './pages/Signup';
+import { ForgotPassword } from './pages/ForgotPassword';
+
 function App() {
   const { accounts, loading, importData } = useData();
 
@@ -173,41 +179,58 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/setup" element={
-          accounts.length > 0 ? <Navigate to="/" replace /> : <SetupWizard onComplete={handleSetupComplete} />
-        } />
+      <AuthProvider>
+        <Routes>
+          {/* Public Auth Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        <Route path="/" element={
-          accounts.length === 0 ? <Navigate to="/setup" replace /> : (
-            <Layout>
-              <Dashboard />
-            </Layout>
-          )
-        } />
+          {/* Setup Route (Semi-Protected) */}
+          <Route path="/setup" element={
+            <ProtectedRoute>
+              {accounts.length > 0 ? <Navigate to="/" replace /> : <SetupWizard onComplete={handleSetupComplete} />}
+            </ProtectedRoute>
+          } />
 
-        <Route path="/analytics" element={
-          accounts.length === 0 ? <Navigate to="/setup" replace /> : (
-            <Layout>
-              <Analytics />
-            </Layout>
-          )
-        } />
+          {/* Protected App Routes */}
+          <Route path="/" element={
+            <ProtectedRoute>
+              {accounts.length === 0 ? <Navigate to="/setup" replace /> : (
+                <Layout>
+                  <Dashboard />
+                </Layout>
+              )}
+            </ProtectedRoute>
+          } />
 
-        <Route path="/settings/*" element={
-          accounts.length === 0 ? <Navigate to="/setup" replace /> : (
-            <Layout>
-              <Routes>
-                <Route path="/" element={<Navigate to="bills" replace />} />
-                <Route path="bills" element={<ManageBills />} />
-                <Route path="accounts" element={<ManageAccounts />} />
-                <Route path="paydays" element={<ManagePaydays />} />
-                <Route path="data" element={<DataManagement />} />
-              </Routes>
-            </Layout>
-          )
-        } />
-      </Routes>
+          <Route path="/analytics" element={
+            <ProtectedRoute>
+              {accounts.length === 0 ? <Navigate to="/setup" replace /> : (
+                <Layout>
+                  <Analytics />
+                </Layout>
+              )}
+            </ProtectedRoute>
+          } />
+
+          <Route path="/settings/*" element={
+            <ProtectedRoute>
+              {accounts.length === 0 ? <Navigate to="/setup" replace /> : (
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={<Navigate to="bills" replace />} />
+                    <Route path="bills" element={<ManageBills />} />
+                    <Route path="accounts" element={<ManageAccounts />} />
+                    <Route path="paydays" element={<ManagePaydays />} />
+                    <Route path="data" element={<DataManagement />} />
+                  </Routes>
+                </Layout>
+              )}
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
