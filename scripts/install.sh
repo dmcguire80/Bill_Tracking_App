@@ -72,5 +72,14 @@ pm2 save
 # Explicitly set startup for systemd on Debian (avoids fragile pipe/tail method)
 pm2 startup systemd -u root --hp /root
 
+# 6. Create 'update' alias
+msg_info "Creating 'update' command alias..."
+cat <<EOF > /usr/local/bin/update
+#!/bin/bash
+curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPO/main/scripts/install.sh | bash
+EOF
+chmod +x /usr/local/bin/update
+msg_ok "You can now run 'update' to update the application!"
+
 msg_ok "Success! App is running on version $LATEST_TAG"
 msg_ok "Access via Nginx on port 80 at: http://<Container-IP>"
