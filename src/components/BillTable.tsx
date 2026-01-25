@@ -22,10 +22,10 @@ export const BillTable = ({ data, onTogglePaid, onEdit, onDelete }: BillTablePro
                         <th className="px-3 py-3 sticky left-12 z-30 bg-[#1e293b] min-w-[60px] border-r border-white/10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">Date</th>
                         <th className="px-4 py-3 min-w-[140px]">Bill</th>
                         <th className="px-2 py-3 text-center w-12">Paid</th>
-                        {accounts.map((account, index) => (
+                        {accounts.map((account) => (
                             <th
                                 key={account.id}
-                                className={`px-4 py-3 text-right min-w-[100px] text-emerald-400 ${index > 0 ? 'hidden md:table-cell' : ''}`}
+                                className="px-4 py-3 text-right min-w-[100px] text-emerald-400"
                             >
                                 {account.name}
                             </th>
@@ -80,12 +80,12 @@ const Row = ({ entry, onTogglePaid, onEdit, onDelete }: {
                     </div>
                 </td>
                 <td className="px-2 py-3 text-center text-emerald-500/50">-</td>
-                {accounts.map((account, index) => {
+                {accounts.map((account) => {
                     const owed = entry.totalOwed?.[account.name] || 0;
                     const remaining = entry.calculatedBalances?.[account.name] ?? 0;
 
                     return (
-                        <td key={account.id} className={`px-4 py-3 text-right ${index > 0 ? 'hidden md:table-cell' : ''}`}>
+                        <td key={account.id} className="px-4 py-3 text-right">
                             <div className="flex flex-col items-end gap-1">
                                 <div className="flex flex-col items-end text-[10px] font-mono opacity-60 leading-tight">
                                     <span>Start:</span>
@@ -140,10 +140,10 @@ const Row = ({ entry, onTogglePaid, onEdit, onDelete }: {
                     {bill.paid ? <Check size={14} strokeWidth={3} /> : <Circle size={14} />}
                 </button>
             </td>
-            {accounts.map((account, index) => {
+            {accounts.map((account) => {
                 const amount = bill.amounts[account.name];
                 return (
-                    <td key={account.id} className={`px-4 py-3 text-right font-mono text-neutral-300 ${index > 0 ? 'hidden md:table-cell' : ''}`}>
+                    <td key={account.id} className="px-4 py-3 text-right font-mono text-neutral-300">
                         {amount !== undefined ? formatCurrency(amount) : <span className="text-white/10">-</span>}
                     </td>
                 );

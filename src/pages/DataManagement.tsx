@@ -112,6 +112,12 @@ export const DataManagement = () => {
                                     </div>
                                 </div>
                             )}
+
+                            <div className="mt-4 pt-4 border-t border-white/5">
+                                <p className="text-xs text-neutral-500 font-mono">
+                                    Local Backup Path: <span className="text-neutral-400">/opt/bill-tracker/backups</span>
+                                </p>
+                            </div>
                         </div>
 
                         {/* Export Section */}
@@ -186,7 +192,9 @@ export const DataManagement = () => {
                     </div>
                 </div>
             </div>
-
+            <div className="text-center mt-12 mb-8">
+                <span className="text-xs text-slate-500 font-mono">v0.7.12</span>
+            </div>
         </>
     );
 };
