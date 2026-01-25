@@ -248,36 +248,34 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     const importData = async (data: any) => {
         if (!user || !data) return;
 
-        // Batch write is limited to 500 ops. We'll do simple loops for now.
+        // Use batch writes for performance (max 500 ops per batch)
         const batch = writeBatch(db);
         let count = 0;
-        const commitBatch = async () => {
-            if (count > 0) {
-                await batch.commit();
-                count = 0;
-            }
+
+        const addToBatch = (collectionName: string, item: any) => {
+            // Generate a new ID if needed, or use existing
+            const docRef = doc(collection(db, collectionName));
+            const cleanData = sanitizeData({ ...item, userId: user.uid });
+            batch.set(docRef, cleanData); // Use set() with new docRef
+            count++;
         };
 
-        // We can't easily use batch for ALL imports because we need to generate new Docs.
-        // For simplicity in this migration step, we'll just loop and addDoc.
-        // It's slower but safer for a one-time user migration.
-
         if (Array.isArray(data.entries)) {
-            for (const item of data.entries) await addToFirestore('entries', item);
+            data.entries.forEach((item: any) => addToBatch('entries', item));
         }
         if (Array.isArray(data.accounts)) {
-            for (const item of data.accounts) await addToFirestore('accounts', item);
+            data.accounts.forEach((item: any) => addToBatch('accounts', item));
         }
         if (Array.isArray(data.templates)) {
-            for (const item of data.templates) await addToFirestore('templates', item);
+            data.templates.forEach((item: any) => addToBatch('templates', item));
         }
         if (Array.isArray(data.paydayTemplates)) {
-            for (const item of data.paydayTemplates) await addToFirestore('paydayTemplates', item);
+            data.paydayTemplates.forEach((item: any) => addToBatch('paydayTemplates', item));
         }
 
-        // To satisfy linter about unused commitBatch - although logic is changed to not use batch for now
-        // we can just remove it or call it at end (empty op)
-        await commitBatch();
+        if (count > 0) {
+            await batch.commit();
+        }
     };
 
     const updateBackupSettings = (settings: BackupSettings) => setBackupSettings(settings);
