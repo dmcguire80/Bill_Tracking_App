@@ -25,6 +25,11 @@ msg_info "Checking for latest release..."
 LATEST_TAG=$(curl -sL https://api.github.com/repos/$GITHUB_REPO/releases/latest | jq -r .tag_name)
 
 if [[ "$LATEST_TAG" == "null" ]]; then
+    # Fallback: Get latest tag from git refs if no release is published
+    LATEST_TAG=$(git ls-remote --tags --sort="v:refname" "https://github.com/$GITHUB_REPO.git" | tail -n1 | sed 's/.*\///')
+fi
+
+if [[ -z "$LATEST_TAG" ]]; then
     LATEST_TAG="main"
 fi
 
