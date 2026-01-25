@@ -50,7 +50,7 @@ export const Signup = () => {
                     <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-2">
                         Create Account
                     </h1>
-                    <p className="text-slate-400">Join Bill Tracker today</p>
+                    <p className="text-slate-400">Join Linear Budget today</p>
                 </div>
 
                 {error && (

@@ -110,6 +110,33 @@ Phase 1
 - [x] Final walkthrough
 - **Status:** complete
 
+### Phase 8: Hosting & Security (SaaS Foundation)
+<!-- 
+  WHAT: Secure the app, branding, and prepare for public hosting.
+-->
+- [x] Configure Firebase Hosting (`firebase.json`)
+- [x] Implement `firestore.rules` (Security Rules)
+- [x] Design & Add Logo/Favicon
+- **Status:** complete
+
+### Phase 9: Mobile & UX Polish
+<!-- 
+  WHAT: Quality of life improvements requested by user.
+-->
+- [ ] Maximize Mobile Experience (Sticky headers, font sizing)
+- [ ] "Scroll to Today" Feature
+- [ ] "Hide Old Data" Settings Option
+- **Status:** pending
+
+### Phase 10: SaaS & Advanced Settings
+<!-- 
+  WHAT: Subscription model and advanced user management.
+-->
+- [ ] Setup Stripe Integration (Firebase Extension)
+- [ ] Advanced Settings (Profile management, Dark/Light mode)
+- [ ] Biometric/MFA Login Options
+- **Status:** pending
+
 ## Key Questions
 <!-- 
   WHAT: Important questions you need to answer during the task.

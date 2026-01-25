@@ -10,7 +10,7 @@ export const Layout = ({ children }: LayoutProps) => {
             {/* Header */}
             <header className="border-b border-white/10 px-8 py-4 hidden md:flex items-center justify-between">
                 <h1 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
-                    Bill Tracker
+                    Linear Budget
                 </h1>
 
             </header>

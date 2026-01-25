@@ -199,7 +199,7 @@ export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
                             <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto">
                                 <Sparkles className="text-emerald-400" size={40} />
                             </div>
-                            <h1 className="text-4xl font-bold text-white">Welcome to Bill Tracker!</h1>
+                            <h1 className="text-4xl font-bold text-white">Welcome to Linear Budget!</h1>
                             <p className="text-xl text-neutral-300 max-w-2xl mx-auto">
                                 Let's get you set up. We'll add your accounts, set a pay schedule, and add your bills.
                             </p>

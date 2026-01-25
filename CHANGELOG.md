@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.9.0 - Linear Budget Rebrand & Security
+### Changed
+- **Rebrand**: Application renamed to **Linear Budget**. New logo and branding applied.
+- **Security**: Added strict `firestore.rules` to enforce user-data isolation.
+- **Hosting**: Added `firebase.json` configuration for firebase hosting.
+
 ## v0.8.5 - Cleanup Release
 ### Removed
 - **Migration Tool**: Removed the legacy "Migrate to Cloud" tool and component as migration is complete.
