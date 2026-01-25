@@ -101,25 +101,27 @@ function Dashboard() {
     <>
       <Navigation />
 
-      <header className="flex justify-between items-end border-b border-white/10 pb-6 mb-8">
+      <header className="flex justify-between items-end border-b border-white/10 pb-4 mb-4 md:pb-6 md:mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-white">Dashboard</h2>
-          <p className="text-neutral-400">Overview of your bills and payments.</p>
+          <h2 className="text-2xl font-bold text-white hidden sm:block">Dashboard</h2>
+          <p className="text-neutral-400 hidden sm:block">Overview of your bills and payments.</p>
         </div>
-        <div className="flex gap-4 items-center">
+        <div className="flex gap-2 sm:gap-4 items-center">
           <button
             onClick={() => setIsPaydayFormOpen(true)}
-            className="bg-white/5 hover:bg-white/10 text-emerald-400 border border-emerald-500/20 px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors h-10"
+            className="bg-white/5 hover:bg-white/10 text-emerald-400 border border-emerald-500/20 px-3 sm:px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors h-10 shrink-0"
+            title="Add Deposit"
           >
             <Plus size={20} />
-            Add Deposit
+            <span className="hidden sm:inline">Add Deposit</span>
           </button>
           <button
             onClick={() => setIsBillFormOpen(true)}
-            className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-colors h-10"
+            className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 sm:px-4 py-2 rounded-lg font-medium shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-colors h-10 shrink-0"
+            title="One-time Payment"
           >
             <Plus size={20} />
-            One-time Payment
+            <span className="hidden sm:inline">One-time Payment</span>
           </button>
         </div>
       </header>

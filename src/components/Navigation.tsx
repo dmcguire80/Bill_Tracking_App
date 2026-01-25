@@ -28,11 +28,11 @@ export const Navigation = () => {
                             }`}
                     >
                         <Icon size={18} />
-                        <span>{label}</span>
+                        <span className="hidden sm:inline">{label}</span>
                     </Link>
                 ))}
             </div>
-            <span className="text-xs text-slate-500 font-mono">v0.7.10</span>
+            <span className="text-xs text-slate-500 font-mono">v0.7.11</span>
         </nav>
     );
 };
