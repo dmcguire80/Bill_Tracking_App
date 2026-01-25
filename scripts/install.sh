@@ -66,6 +66,7 @@ cd "$INSTALL_DIR"
 msg_info "Debug: Listing lxc directory content:"
 ls -la lxc/
 
+pm2 delete bill-tracker 2>/dev/null || true
 pm2 start "$INSTALL_DIR/lxc/pm2-ecosystem.config.cjs"
 pm2 save
 # Explicitly set startup for systemd on Debian (avoids fragile pipe/tail method)
