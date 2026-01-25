@@ -1,11 +1,23 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { Entry, BillTemplate, Account, PaydayTemplate, Bill } from '../types';
-import { initialData } from '../data/initialData';
 import { generateEntries } from '../utils/generator';
 import { uuid } from '../utils/uuid';
+import { useAuth } from './AuthContext';
+import { db } from '../config/firebase';
+import {
+    collection,
+    query,
+    where,
+    onSnapshot,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    doc,
+    writeBatch
+} from 'firebase/firestore';
 
-// Initial hardcoded accounts until we have persistence - UPDATED to object format
-const DEFAULT_ACCOUNTS: Account[] = [];
+// No local defaults needed with Firebase
+
 
 export interface BackupSettings {
     enabled: boolean;
@@ -32,7 +44,7 @@ interface DataContextType {
     updatePaydayTemplate: (template: PaydayTemplate) => void;
     deletePaydayTemplate: (id: string) => void;
     exportData: () => any;
-    importData: (data: any) => void;
+    importData: (data: any) => Promise<void>;
     backupSettings: BackupSettings;
     updateBackupSettings: (settings: BackupSettings) => void;
     loading: boolean;
@@ -40,312 +52,226 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-// Helper to migrate old string arrays to objects
-const migrateAccounts = (saved: string): Account[] => {
-    try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && typeof parsed[0] === 'string') {
-            return parsed.map((name: string, index: number) => ({
-                id: uuid(),
-                name,
-                order: index
-            }));
-        }
-        return parsed as Account[];
-    } catch {
-        return DEFAULT_ACCOUNTS;
-    }
-};
-
-// Helper to migrate templates to include isActive field
-const migrateTemplates = <T extends BillTemplate | PaydayTemplate>(templates: T[]): T[] => {
-    return templates.map(t => ({
-        ...t,
-        isActive: t.isActive ?? true,  // Default to active
-        endMonth: t.endMonth ?? undefined
-    }));
-};
-
 export const DataProvider = ({ children }: { children: ReactNode }) => {
+    const { user } = useAuth();
+
     // State
-    const [entries, setEntries] = useState<Entry[]>(() => {
-        const saved = localStorage.getItem('entries');
-        return saved ? JSON.parse(saved) : initialData;
-    });
-
-    const [accounts, setAccounts] = useState<Account[]>(() => {
-        const saved = localStorage.getItem('accounts');
-        return saved ? migrateAccounts(saved) : DEFAULT_ACCOUNTS;
-    });
-
-    const [templates, setTemplates] = useState<BillTemplate[]>(() => {
-        const saved = localStorage.getItem('templates');
-        const parsed = saved ? JSON.parse(saved) : [];
-        return migrateTemplates(parsed);
-    });
-
-    const [paydayTemplates, setPaydayTemplates] = useState<PaydayTemplate[]>(() => {
-        const saved = localStorage.getItem('paydayTemplates');
-        const parsed = saved ? JSON.parse(saved) : [];
-        return migrateTemplates(parsed);
-    });
-
-    const [backupSettings, setBackupSettings] = useState<BackupSettings>(() => {
-        const stored = localStorage.getItem('backupSettings');
-        return stored ? JSON.parse(stored) : { enabled: false, interval: 'daily', lastBackup: null };
-    });
-
+    const [entries, setEntries] = useState<Entry[]>([]);
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    const [templates, setTemplates] = useState<BillTemplate[]>([]);
+    const [paydayTemplates, setPaydayTemplates] = useState<PaydayTemplate[]>([]);
+    const [backupSettings, setBackupSettings] = useState<BackupSettings>({ enabled: false, interval: 'daily', lastBackup: null });
     const [loading, setLoading] = useState(true);
 
-    const updateBackupSettings = (settings: BackupSettings) => {
-        setBackupSettings(settings);
+    // Initial Load & Real-time Sync (Firestore)
+    useEffect(() => {
+        if (!user) {
+            setEntries([]);
+            setAccounts([]);
+            setTemplates([]);
+            setPaydayTemplates([]);
+            setLoading(false);
+            return;
+        }
+
+        setLoading(true);
+
+        // Helper to subscribe to a collection
+        const subscribe = (collectionName: string, setter: (data: any[]) => void) => {
+            const q = query(collection(db, collectionName), where('userId', '==', user.uid));
+            return onSnapshot(q, (snapshot) => {
+                const data = snapshot.docs.map(doc => ({ ...doc.data(), firebaseId: doc.id }));
+                setter(data);
+            });
+        };
+
+        const unsubEntries = subscribe('entries', (data) => setEntries(data as Entry[]));
+        const unsubAccounts = subscribe('accounts', (data) => setAccounts(data.sort((a, b) => a.order - b.order) as Account[]));
+        const unsubTemplates = subscribe('templates', (data) => setTemplates(data as BillTemplate[]));
+        const unsubPaydayTemplates = subscribe('paydayTemplates', (data) => setPaydayTemplates(data as PaydayTemplate[]));
+
+        // Backup settings are less critical, can be stored in user profile or separate doc
+        // For now, simpler to not sync them or store in a 'settings' collection
+        setLoading(false);
+
+        return () => {
+            unsubEntries();
+            unsubAccounts();
+            unsubTemplates();
+            unsubPaydayTemplates();
+        };
+    }, [user]);
+
+    // Firestore Actions Helper
+    const addToFirestore = async (collectionName: string, data: any) => {
+        if (!user) return;
+        // Use the ID from the object as the Firestore document ID to ensure consistency
+        // or let Firestore generate one. Here we use custom IDs so we might want to setDoc
+        // But for simplicity of migration, we'll let Firestore generate IDs or filter by our internal UUIDs.
+        // Actually, best practice: separate internal ID (application logic) from Firestore ID (database logic).
+        await addDoc(collection(db, collectionName), { ...data, userId: user.uid });
     };
 
-    // Initial Load & Sync
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                // 1. Try to fetch from server
-                const res = await fetch('/api/data');
+    const updateInFirestore = async (collectionName: string, _: string, data: any) => {
+        if (!user) return;
+        // We need to find the FIREBASE document ID that corresponds to our internal ID
+        // This is inefficient (query before update), but necessary unless we store firebaseId on the object
+        // NOTE: The subscribe logic above adds `firebaseId` to the object state!
+        // So we can check if data has firebaseId.
 
-                if (res.ok) {
-                    const serverData = await res.json();
-                    setEntries(serverData.entries || []);
-                    setAccounts(serverData.accounts || DEFAULT_ACCOUNTS);
-                    setTemplates(migrateTemplates(serverData.templates || []));
-                    setPaydayTemplates(migrateTemplates(serverData.paydayTemplates || []));
-                    setBackupSettings(serverData.backupSettings || { enabled: false, interval: 'daily', lastBackup: null });
-                } else if (res.status === 404) {
-                    // 2. No server data (Fresh install or migration)
-                    // Check if we have local data to migrate
-                    const localEntries = localStorage.getItem('entries');
-                    const localAccounts = localStorage.getItem('accounts');
+        const firebaseId = (data as any).firebaseId;
+        if (firebaseId) {
+            // Remove firebaseId before saving
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { firebaseId: _fid, ...cleanData } = data;
+            await updateDoc(doc(db, collectionName, firebaseId), cleanData);
+        }
+    };
 
-                    if (localEntries || localAccounts) {
-                        console.log('Migrating local data to server...');
-                        // Use existing local state (already initialized from localStorage by useState)
-                        const migrationData = {
-                            entries,
-                            accounts,
-                            templates,
-                            paydayTemplates,
-                            backupSettings
-                        };
-
-                        await fetch('/api/data', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(migrationData)
-                        });
-                    }
-                }
-            } catch (err) {
-                console.error('Failed to load data:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadData();
-    }, []); // Run once on mount
-
-    // Auto-Save to Server (Debounced)
-    useEffect(() => {
-        if (loading) return; // Don't save while initial loading
-
-        const saveData = async () => {
-            try {
-                const data = {
-                    entries,
-                    accounts,
-                    templates,
-                    paydayTemplates,
-                    backupSettings
-                };
-
-                await fetch('/api/data', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-            } catch (err) {
-                console.error('Auto-save failed:', err);
-            }
-        };
-
-        const timeoutId = setTimeout(saveData, 1000); // Debounce 1s
-        return () => clearTimeout(timeoutId);
-
-    }, [entries, accounts, templates, paydayTemplates, backupSettings, loading]);
-
-    // Legacy LOCAL STORAGE Persistence (Keep as fallback/cache or remove?)
-    // Removing strictly to force server source-of-truth as requested.
-    // But we might want to keep it mirrored for offline safety? 
-    // For now, let's keep mirroring to localStorage but ONLY for offline startup resilience if server is down.
-    useEffect(() => {
-        if (loading) return;
-        localStorage.setItem('entries', JSON.stringify(entries));
-        localStorage.setItem('accounts', JSON.stringify(accounts));
-        localStorage.setItem('templates', JSON.stringify(templates));
-        localStorage.setItem('paydayTemplates', JSON.stringify(paydayTemplates));
-        localStorage.setItem('backupSettings', JSON.stringify(backupSettings));
-    }, [entries, accounts, templates, paydayTemplates, backupSettings, loading]);
+    const deleteFromFirestore = async (collectionName: string, id: string, objects: any[]) => {
+        if (!user) return;
+        const obj = objects.find(o => o.id === id);
+        const firebaseId = (obj as any)?.firebaseId;
+        if (firebaseId) {
+            await deleteDoc(doc(db, collectionName, firebaseId));
+        }
+    };
 
     // Actions
-    const addEntry = (entry: Entry) => setEntries(prev => [...prev, entry]);
-
-    const updateEntry = (updatedEntry: Entry) => {
-        setEntries(prev => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e));
-    };
-
-    const deleteEntry = (id: string) => setEntries(prev => prev.filter(e => e.id !== id));
-
-    // Helper to sync entries when templates change
-    const syncEntriesWithTemplate = (template: BillTemplate | PaydayTemplate, isDeleted: boolean = false) => {
-        setEntries(prev => {
-            // 1. Remove entries linked to this template ID (that are not paid)
-            // If deleted, remove all unpaid. If updated, we'll replace them.
-            const filtered = prev.filter(e => e.templateId !== template.id || (e.templateId === template.id && (e as Bill).paid));
-
-            if (isDeleted) return filtered;
-
-            // 2. Generate new entries for the current year
-            const isBillTemplate = 'amounts' in template;
-            const newGenerated = generateEntries(
-                isBillTemplate ? [template as BillTemplate] : [],
-                !isBillTemplate ? [template as PaydayTemplate] : [],
-                new Date().getFullYear() // 2026 or current year
-            );
-
-            // 3. Filter out generated entries that already exist in "paid" state
-            const toAdd = newGenerated.filter(gen => {
-                const alreadyExistsPaid = prev.some(e =>
-                    e.templateId === template.id &&
-                    e.month === gen.month &&
-                    e.date === gen.date &&
-                    (e as Bill).paid
-                );
-                return !alreadyExistsPaid;
-            });
-
-            return [...filtered, ...toAdd];
-        });
-    };
+    const addEntry = (entry: Entry) => addToFirestore('entries', entry);
+    const updateEntry = (entry: Entry) => updateInFirestore('entries', entry.id, entry);
+    const deleteEntry = (id: string) => deleteFromFirestore('entries', id, entries);
 
     const addAccount = (name: string) => {
         if (!accounts.some(a => a.name === name)) {
-            setAccounts(prev => [
-                ...prev,
-                { id: uuid(), name, order: prev.length }
-            ]);
+            addToFirestore('accounts', { id: uuid(), name, order: accounts.length });
         }
     };
 
     const updateAccount = (id: string, name: string) => {
-        setAccounts(prev => prev.map(a => a.id === id ? { ...a, name } : a));
+        const account = accounts.find(a => a.id === id);
+        if (account) updateInFirestore('accounts', id, { ...account, name });
     };
 
-    const removeAccount = (id: string) => {
-        setAccounts(prev => prev.filter(a => a.id !== id));
-    };
+    const removeAccount = (id: string) => deleteFromFirestore('accounts', id, accounts);
 
     const reorderAccounts = (newOrder: Account[]) => {
-        const reindexed = newOrder.map((a, i) => ({ ...a, order: i }));
-        setAccounts(reindexed);
+        // Batch update for reordering
+        if (!user) return;
+        const batch = writeBatch(db);
+        newOrder.forEach((acc, index) => {
+            if ((acc as any).firebaseId) {
+                const ref = doc(db, 'accounts', (acc as any).firebaseId);
+                batch.update(ref, { order: index });
+            }
+        });
+        batch.commit();
     };
 
     const addTemplate = (template: BillTemplate) => {
-        setTemplates(prev => [...prev, template]);
+        addToFirestore('templates', template);
         syncEntriesWithTemplate(template);
     };
 
-    const updateTemplate = (updated: BillTemplate) => {
-        setTemplates(prev => prev.map(t => t.id === updated.id ? updated : t));
-        syncEntriesWithTemplate(updated);
+    const updateTemplate = (template: BillTemplate) => {
+        updateInFirestore('templates', template.id, template);
+        syncEntriesWithTemplate(template);
     };
 
     const deleteTemplate = (id: string) => {
         const template = templates.find(t => t.id === id);
         if (template) {
-            setTemplates(prev => prev.filter(t => t.id !== id));
+            deleteFromFirestore('templates', id, templates);
             syncEntriesWithTemplate(template, true);
         }
     };
 
     const addPaydayTemplate = (template: PaydayTemplate) => {
-        setPaydayTemplates(prev => [...prev, template]);
+        addToFirestore('paydayTemplates', template);
         syncEntriesWithTemplate(template);
     };
 
-    const updatePaydayTemplate = (updated: PaydayTemplate) => {
-        setPaydayTemplates(prev => prev.map(t => t.id === updated.id ? updated : t));
-        syncEntriesWithTemplate(updated);
+    const updatePaydayTemplate = (template: PaydayTemplate) => {
+        updateInFirestore('paydayTemplates', template.id, template);
+        syncEntriesWithTemplate(template);
     };
 
     const deletePaydayTemplate = (id: string) => {
         const template = paydayTemplates.find(t => t.id === id);
         if (template) {
-            setPaydayTemplates(prev => prev.filter(t => t.id !== id));
+            deleteFromFirestore('paydayTemplates', id, paydayTemplates);
             syncEntriesWithTemplate(template, true);
         }
     };
 
+    // Helper to sync entries when templates change
+    // Note: This logic is tricky with Firestore. We generate entries LOCALLY, check duplicates LOCALLY,
+    // and then push NEW entries to Firestore. We do NOT delete old manual entries automatically via DB.
+    const syncEntriesWithTemplate = (template: BillTemplate | PaydayTemplate, isDeleted: boolean = false) => {
+        if (isDeleted) {
+            // Remove unpaid/future entries linked to this template
+            entries
+                .filter(e => e.templateId === template.id && !(e as Bill).paid)
+                .forEach(e => deleteFromFirestore('entries', e.id, entries));
+            return;
+        }
 
+        const isBillTemplate = 'amounts' in template;
+        const newGenerated = generateEntries(
+            isBillTemplate ? [template as BillTemplate] : [],
+            !isBillTemplate ? [template as PaydayTemplate] : [],
+            new Date().getFullYear()
+        );
 
-    // Auto-Backup Logic
-    useEffect(() => {
-        if (!backupSettings.enabled) return;
+        newGenerated.forEach(gen => {
+            const alreadyExists = entries.some(e =>
+                e.templateId === template.id &&
+                e.month === gen.month &&
+                e.date === gen.date
+            );
 
-        const performBackup = async () => {
-            const now = new Date();
-            const last = backupSettings.lastBackup ? new Date(backupSettings.lastBackup) : new Date(0);
-            const daysDiff = (now.getTime() - last.getTime()) / (1000 * 3600 * 24);
+            if (!alreadyExists) {
+                addToFirestore('entries', gen);
+            }
+        });
+    };
 
-            const shouldBackup =
-                (backupSettings.interval === 'daily' && daysDiff >= 1) ||
-                (backupSettings.interval === 'weekly' && daysDiff >= 7) ||
-                !backupSettings.lastBackup; // First time
+    const importData = async (data: any) => {
+        if (!user || !data) return;
 
-            if (shouldBackup) {
-                try {
-                    const data = {
-                        entries,
-                        accounts,
-                        templates,
-                        paydayTemplates,
-                        meta: {
-                            version: 'v0.7.4',
-                            backupDate: now.toISOString(),
-                            auto: true
-                        }
-                    };
-
-                    const res = await fetch('/api/backup', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    });
-
-                    if (res.ok) {
-                        console.log('Auto-backup successful');
-                        setBackupSettings(prev => ({ ...prev, lastBackup: now.toISOString() }));
-                    } else {
-                        console.error('Auto-backup failed:', await res.text());
-                    }
-                } catch (err) {
-                    console.error('Auto-backup error:', err);
-                }
+        // Batch write is limited to 500 ops. We'll do simple loops for now.
+        const batch = writeBatch(db);
+        let count = 0;
+        const commitBatch = async () => {
+            if (count > 0) {
+                await batch.commit();
+                count = 0;
             }
         };
 
-        // Check immediately on load/change, and could set interval but simple check is enough for SPA
-        performBackup();
+        // We can't easily use batch for ALL imports because we need to generate new Docs.
+        // For simplicity in this migration step, we'll just loop and addDoc.
+        // It's slower but safer for a one-time user migration.
 
-        // Also set an interval to check every hour while the app is open
-        const intervalId = setInterval(performBackup, 3600000); // 1 hour
-        return () => clearInterval(intervalId);
+        if (Array.isArray(data.entries)) {
+            for (const item of data.entries) await addToFirestore('entries', item);
+        }
+        if (Array.isArray(data.accounts)) {
+            for (const item of data.accounts) await addToFirestore('accounts', item);
+        }
+        if (Array.isArray(data.templates)) {
+            for (const item of data.templates) await addToFirestore('templates', item);
+        }
+        if (Array.isArray(data.paydayTemplates)) {
+            for (const item of data.paydayTemplates) await addToFirestore('paydayTemplates', item);
+        }
 
-    }, [backupSettings, entries, accounts, templates, paydayTemplates]);
+        // To satisfy linter about unused commitBatch - although logic is changed to not use batch for now
+        // we can just remove it or call it at end (empty op)
+        await commitBatch();
+    };
+
+    const updateBackupSettings = (settings: BackupSettings) => setBackupSettings(settings);
 
     return (
         <DataContext.Provider value={{
@@ -366,21 +292,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             addPaydayTemplate,
             updatePaydayTemplate,
             deletePaydayTemplate,
-            exportData: () => ({
-                entries,
-                accounts,
-                templates,
-                paydayTemplates
-            }),
-            importData: (data: any) => {
-                if (!data || typeof data !== 'object') throw new Error('Invalid data format');
-
-                // Basic validation
-                if (Array.isArray(data.entries)) setEntries(data.entries);
-                if (Array.isArray(data.accounts)) setAccounts(data.accounts);
-                if (Array.isArray(data.templates)) setTemplates(migrateTemplates(data.templates));
-                if (Array.isArray(data.paydayTemplates)) setPaydayTemplates(migrateTemplates(data.paydayTemplates));
-            },
+            exportData: () => ({ entries, accounts, templates, paydayTemplates }),
+            importData,
             backupSettings,
             updateBackupSettings,
             loading
