@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { BarChart3, Settings } from 'lucide-react';
+import { Home, BarChart3, Settings } from 'lucide-react';
 
 export const Navigation = () => {
     const location = useLocation();
@@ -10,6 +10,7 @@ export const Navigation = () => {
     };
 
     const navItems = [
+        { path: '/', label: 'Dashboard', icon: Home },
         { path: '/analytics', label: 'Analytics', icon: BarChart3 },
         { path: '/settings', label: 'Settings', icon: Settings },
     ];
@@ -31,7 +32,7 @@ export const Navigation = () => {
                     </Link>
                 ))}
             </div>
-            <span className="text-xs text-neutral-600 font-mono">v0.7.2</span>
+            <span className="text-xs text-neutral-600 font-mono">v0.7.3</span>
         </nav>
     );
 };
