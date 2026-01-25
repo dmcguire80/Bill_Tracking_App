@@ -12,6 +12,12 @@
 
 ## Features
 
+### 🔐 Authentication & Security
+- **Secure Login**: Email/Password authentication via Firebase Auth
+- **Private Data**: Every user gets their own isolated database instance
+- **Cloud Sync**: Real-time synchronization across all devices (Google Firestore)
+- **Protected Routes**: Secure navigation guards
+
 ### 📊 Dashboard
 - Real-time balance tracking across multiple accounts
 - Running balance calculations with payday integration
@@ -51,7 +57,8 @@
 - **Icons**: Lucide React
 - **Build Tool**: Vite
 - **State Management**: React Context API
-- **Data Persistence**: localStorage (v0.3.0)
+- **Data Persistence**: Google Cloud Firestore (v0.8.0+)
+- **Backend (Legacy)**: Node.js Express (for serving static files)
 
 ## Installation
 
@@ -144,18 +151,12 @@ src/
 
 ## Roadmap
 
-### Current Version (v0.7.x)
-- [x] First-use setup wizard
-- [x] Server-side data persistence (JSON)
-- [x] Automated backups
-- [x] Mobile optimizations (Condensed headers, sticky tables)
-- [x] Deployment automation (LXC, NPM, Cloudflare)
-
-### v0.8.0 (Planned) - Security & Multi-User
-- [ ] User authentication (Login/Signup)
-- [ ] Multi-user support (Separate data per user)
-- [ ] Password protection for sensitive actions
-- [ ] Session management
+### Current Version (v0.8.x)
+- [x] User authentication (Login/Signup)
+- [x] Multi-user support (Separate data per user)
+- [x] Cloud Migration Tool (Local -> Cloud)
+- [x] Real-time Cloud Sync
+- [x] Performance optimizations (Batch writes)
 
 ### Future Enhancements
 - [ ] Budget tracking & spending limits

@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.8.4 (2026-01-25)
+### Performance
+- **Optimized Import**: Switched Data Migration tool to use Firestore Batch Writes (limit 500 ops). This resolves the timeout/hanging issue during the "Creating..." step of setup, making migration nearly instant.
+
+## v0.8.3 (2026-01-25)
+### Fixed
+- **Setup Reliability**: Added data sanitization to prevent Firestore from rejecting `undefined` values during Setup/Migration.
+- **Error Reporting**: detailed alert messages are now shown if the Setup Wizard encounters an error, rather than failing silently.
+
+## v0.8.2 (2026-01-25)
+### Fixed
+- **Setup Wizard**: Fixed "Start Tracking" button click handler which was failing to await the async cloud create operation.
+- **UX**: Added "Creating..." loading state to the Setup finish button to provide visual feedback.
+
+## v0.8.1 (2026-01-25)
+### Fixed
+- **Crash**: Resolved a "Solid Blue Screen" startup crash caused by incorrect React Context nesting (`AuthProvider` vs `DataProvider`).
+
 ## v0.8.0 (2026-01-25)
 ### Major Features
 - **Authentication**: Added secure Login, Signup, and Forgot Password flows.
