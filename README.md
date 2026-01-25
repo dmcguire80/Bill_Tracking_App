@@ -6,7 +6,7 @@
 [![GitHub Issues](https://img.shields.io/github/issues/dmcguire80/Bill_Tracking_App.svg)](https://github.com/dmcguire80/Bill_Tracking_App/issues)
 [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/dmcguire80/Bill_Tracking_App.svg)](https://github.com/dmcguire80/Bill_Tracking_App/pulls)
 
-📘 **[Architecture Documentation](ARCHITECTURE.md)** | 🛠 **[Contributing Guide](CONTRIBUTING.md)** | 📝 **[Changelog](CHANGELOG.md)**
+📘 **[Architecture](ARCHITECTURE.md)** | 🛠 **[Contributing](CONTRIBUTING.md)** | 🚀 **[Deployment](DEPLOYMENT_GUIDE.md)** | 📝 **[Changelog](CHANGELOG.md)**
 
 ---
 
