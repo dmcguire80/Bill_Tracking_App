@@ -5,7 +5,7 @@ import { SettingsNav } from '../components/SettingsNav';
 import { Download, Upload, AlertTriangle, CheckCircle, FileJson } from 'lucide-react';
 
 export const DataManagement = () => {
-    const { exportData, importData } = useData();
+    const { exportData, importData, backupSettings, updateBackupSettings } = useData();
     const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -71,6 +71,49 @@ export const DataManagement = () => {
                     </header>
 
                     <div className="grid gap-6 md:grid-cols-2">
+                        {/* Auto-Backup Section */}
+                        <div className="bg-white/5 border border-white/10 rounded-xl p-6 md:col-span-2">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-3 bg-fuchsia-500/10 rounded-lg">
+                                    <CheckCircle className="text-fuchsia-400" size={24} />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-xl font-semibold text-white">Automated Backups</h3>
+                                    <p className="text-sm text-neutral-400">Automatically save backups to the server's local disk.</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            className="sr-only peer"
+                                            checked={backupSettings.enabled}
+                                            onChange={(e) => updateBackupSettings({ ...backupSettings, enabled: e.target.checked })}
+                                        />
+                                        <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-fuchsia-500"></div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {backupSettings.enabled && (
+                                <div className="mt-4 pt-4 border-t border-white/5 flex flex-wrap items-center justify-between gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-neutral-400 text-sm">Backup Frequency:</span>
+                                        <select
+                                            value={backupSettings.interval}
+                                            onChange={(e) => updateBackupSettings({ ...backupSettings, interval: e.target.value as 'daily' | 'weekly' })}
+                                            className="bg-black/20 border border-white/10 rounded px-3 py-1 text-white text-sm"
+                                        >
+                                            <option value="daily">Daily</option>
+                                            <option value="weekly">Weekly</option>
+                                        </select>
+                                    </div>
+                                    <div className="text-sm text-neutral-500">
+                                        Last backup: {backupSettings.lastBackup ? new Date(backupSettings.lastBackup).toLocaleString() : 'Never'}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                         {/* Export Section */}
                         <div className="bg-white/5 border border-white/10 rounded-xl p-6">
                             <div className="flex items-center gap-3 mb-4">
@@ -143,7 +186,7 @@ export const DataManagement = () => {
                     </div>
                 </div>
             </div>
-        </div >
+
         </>
     );
 };

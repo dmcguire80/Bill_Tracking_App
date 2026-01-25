@@ -2,8 +2,7 @@ module.exports = {
     apps: [
         {
             name: 'bill-tracker',
-            script: 'npx',
-            args: 'serve -s dist -l 3000',
+            script: 'server.js',
             env: {
                 NODE_ENV: 'production',
             },

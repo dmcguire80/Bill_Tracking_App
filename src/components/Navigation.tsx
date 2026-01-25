@@ -32,7 +32,7 @@ export const Navigation = () => {
                     </Link>
                 ))}
             </div>
-            <span className="text-xs text-neutral-600 font-mono">v0.7.4</span>
+            <span className="text-xs text-neutral-600 font-mono">v0.7.5</span>
         </nav>
     );
 };

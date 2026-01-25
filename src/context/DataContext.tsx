@@ -7,37 +7,34 @@ import { uuid } from '../utils/uuid';
 // Initial hardcoded accounts until we have persistence - UPDATED to object format
 const DEFAULT_ACCOUNTS: Account[] = [];
 
+export interface BackupSettings {
+    enabled: boolean;
+    interval: 'daily' | 'weekly';
+    lastBackup: string | null;
+}
+
 interface DataContextType {
     entries: Entry[];
     accounts: Account[];
     templates: BillTemplate[];
-
-    // Actions
+    paydayTemplates: PaydayTemplate[];
     addEntry: (entry: Entry) => void;
     updateEntry: (entry: Entry) => void;
     deleteEntry: (id: string) => void;
-
     addAccount: (name: string) => void;
     removeAccount: (id: string) => void;
     updateAccount: (id: string, name: string) => void;
-    reorderAccounts: (newOrder: Account[]) => void;
-
+    reorderAccounts: (accounts: Account[]) => void;
     addTemplate: (template: BillTemplate) => void;
     updateTemplate: (template: BillTemplate) => void;
     deleteTemplate: (id: string) => void;
-
-    paydayTemplates: PaydayTemplate[];
     addPaydayTemplate: (template: PaydayTemplate) => void;
     updatePaydayTemplate: (template: PaydayTemplate) => void;
     deletePaydayTemplate: (id: string) => void;
-
-    exportData: () => {
-        entries: Entry[];
-        accounts: Account[];
-        templates: BillTemplate[];
-        paydayTemplates: PaydayTemplate[];
-    };
+    exportData: () => any;
     importData: (data: any) => void;
+    backupSettings: BackupSettings;
+    updateBackupSettings: (settings: BackupSettings) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -208,13 +205,94 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    // Backup Settings
+    const [backupSettings, setBackupSettings] = useState<BackupSettings>(() => {
+        const stored = localStorage.getItem('backupSettings');
+        return stored ? JSON.parse(stored) : { enabled: false, interval: 'daily', lastBackup: null };
+    });
+
+    useEffect(() => {
+        localStorage.setItem('backupSettings', JSON.stringify(backupSettings));
+    }, [backupSettings]);
+
+    const updateBackupSettings = (settings: BackupSettings) => {
+        setBackupSettings(settings);
+    };
+
+    // Auto-Backup Logic
+    useEffect(() => {
+        if (!backupSettings.enabled) return;
+
+        const performBackup = async () => {
+            const now = new Date();
+            const last = backupSettings.lastBackup ? new Date(backupSettings.lastBackup) : new Date(0);
+            const daysDiff = (now.getTime() - last.getTime()) / (1000 * 3600 * 24);
+
+            const shouldBackup =
+                (backupSettings.interval === 'daily' && daysDiff >= 1) ||
+                (backupSettings.interval === 'weekly' && daysDiff >= 7) ||
+                !backupSettings.lastBackup; // First time
+
+            if (shouldBackup) {
+                try {
+                    const data = {
+                        entries,
+                        accounts,
+                        templates,
+                        paydayTemplates,
+                        meta: {
+                            version: 'v0.7.4',
+                            backupDate: now.toISOString(),
+                            auto: true
+                        }
+                    };
+
+                    const res = await fetch('/api/backup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (res.ok) {
+                        console.log('Auto-backup successful');
+                        setBackupSettings(prev => ({ ...prev, lastBackup: now.toISOString() }));
+                    } else {
+                        console.error('Auto-backup failed:', await res.text());
+                    }
+                } catch (err) {
+                    console.error('Auto-backup error:', err);
+                }
+            }
+        };
+
+        // Check immediately on load/change, and could set interval but simple check is enough for SPA
+        performBackup();
+
+        // Also set an interval to check every hour while the app is open
+        const intervalId = setInterval(performBackup, 3600000); // 1 hour
+        return () => clearInterval(intervalId);
+
+    }, [backupSettings, entries, accounts, templates, paydayTemplates]);
+
     return (
         <DataContext.Provider value={{
-            entries, accounts, templates, paydayTemplates,
-            addEntry, updateEntry, deleteEntry,
-            addAccount, removeAccount, updateAccount, reorderAccounts,
-            addTemplate, updateTemplate, deleteTemplate,
-            addPaydayTemplate, updatePaydayTemplate, deletePaydayTemplate,
+            entries,
+            accounts,
+            templates,
+            paydayTemplates,
+            addEntry,
+            updateEntry,
+            deleteEntry,
+            addAccount,
+            removeAccount,
+            updateAccount,
+            reorderAccounts,
+            addTemplate,
+            updateTemplate,
+            deleteTemplate,
+            addPaydayTemplate,
+            updatePaydayTemplate,
+            deletePaydayTemplate,
             exportData: () => ({
                 entries,
                 accounts,
@@ -229,7 +307,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
                 if (Array.isArray(data.accounts)) setAccounts(data.accounts);
                 if (Array.isArray(data.templates)) setTemplates(migrateTemplates(data.templates));
                 if (Array.isArray(data.paydayTemplates)) setPaydayTemplates(migrateTemplates(data.paydayTemplates));
-            }
+            },
+            backupSettings,
+            updateBackupSettings
         }}>
             {children}
         </DataContext.Provider>
