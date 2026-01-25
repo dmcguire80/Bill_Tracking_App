@@ -1,6 +1,14 @@
 # Bill Tracker
 
-A modern, intuitive bill tracking and financial management application built with React, TypeScript, and Tailwind CSS.
+> A self-hosted, mobile-friendly finance tracker for managing bills, paydays, and account projections.
+
+[![Status](https://img.shields.io/badge/status-active-success.svg)]()
+[![GitHub Issues](https://img.shields.io/github/issues/dmcguire80/Bill_Tracking_App.svg)](https://github.com/dmcguire80/Bill_Tracking_App/issues)
+[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/dmcguire80/Bill_Tracking_App.svg)](https://github.com/dmcguire80/Bill_Tracking_App/pulls)
+
+📘 **[Architecture Documentation](ARCHITECTURE.md)** | 🛠 **[Contributing Guide](CONTRIBUTING.md)** | 📝 **[Changelog](CHANGELOG.md)**
+
+---
 
 ## Features
 
