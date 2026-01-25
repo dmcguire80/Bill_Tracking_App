@@ -13,10 +13,22 @@ jobs:
     name: Create GitHub Release
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Extract Release Notes
+        id: extract_notes
+        run: |
+          NOTES=$(node scripts/extract-release-notes.cjs ${{ github.ref_name }})
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          generate_release_notes: true
+          body: ${{ steps.extract_notes.outputs.notes }}
+          generate_release_notes: false
 
   deploy:
     name: Deploy upon Release

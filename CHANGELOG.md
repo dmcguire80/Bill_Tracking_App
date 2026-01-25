@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.9.10 - Clean Notes
+### Changed
+- **Release Notes**: GitHub Releases now use the formatted text from `CHANGELOG.md` instead of raw git commit logs.
+
 ## v0.9.9 - Auto-Releases
 ### Added
 - **GitHub Workflow**: Added automatic GitHub Release creation with generated notes.
