@@ -102,28 +102,37 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         };
     }, [user]);
 
+    // Helper to remove undefined fields recursively
+    const sanitizeData = (data: any): any => {
+        if (Array.isArray(data)) {
+            return data.map(item => sanitizeData(item));
+        } else if (data !== null && typeof data === 'object') {
+            return Object.entries(data).reduce((acc, [key, value]) => {
+                if (value !== undefined) {
+                    acc[key] = sanitizeData(value);
+                }
+                return acc;
+            }, {} as any);
+        }
+        return data;
+    };
+
     // Firestore Actions Helper
     const addToFirestore = async (collectionName: string, data: any) => {
         if (!user) return;
-        // Use the ID from the object as the Firestore document ID to ensure consistency
-        // or let Firestore generate one. Here we use custom IDs so we might want to setDoc
-        // But for simplicity of migration, we'll let Firestore generate IDs or filter by our internal UUIDs.
-        // Actually, best practice: separate internal ID (application logic) from Firestore ID (database logic).
-        await addDoc(collection(db, collectionName), { ...data, userId: user.uid });
+        const cleanData = sanitizeData({ ...data, userId: user.uid });
+        await addDoc(collection(db, collectionName), cleanData);
     };
 
     const updateInFirestore = async (collectionName: string, _: string, data: any) => {
         if (!user) return;
-        // We need to find the FIREBASE document ID that corresponds to our internal ID
-        // This is inefficient (query before update), but necessary unless we store firebaseId on the object
-        // NOTE: The subscribe logic above adds `firebaseId` to the object state!
-        // So we can check if data has firebaseId.
 
         const firebaseId = (data as any).firebaseId;
         if (firebaseId) {
             // Remove firebaseId before saving
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { firebaseId: _fid, ...cleanData } = data;
+            const { firebaseId: _fid, ...rest } = data;
+            const cleanData = sanitizeData(rest);
             await updateDoc(doc(db, collectionName, firebaseId), cleanData);
         }
     };

@@ -138,8 +138,9 @@ export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
                 paydayTemplates,
                 entries
             });
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            alert(`Setup failed: ${error.message}`);
             setIsSubmitting(false);
         }
     };
