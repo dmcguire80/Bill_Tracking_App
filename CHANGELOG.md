@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.9.11 - Catch-up Trigger
+### Changed
+- **Trigger**: Release to force-update servers that missed previous tag events.
+
 ## v0.9.10 - Clean Notes
 ### Changed
 - **Release Notes**: GitHub Releases now use the formatted text from `CHANGELOG.md` instead of raw git commit logs.
