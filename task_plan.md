@@ -123,10 +123,10 @@ Phase 1
 <!-- 
   WHAT: Quality of life improvements requested by user.
 -->
-- [ ] Maximize Mobile Experience (Sticky headers, font sizing)
-- [ ] "Scroll to Today" Feature
-- [ ] "Hide Old Data" Settings Option
-- **Status:** pending
+- [x] Maximize Mobile Experience (Sticky headers, font sizing)
+- [x] "Scroll to Today" Feature
+- [x] "Hide Old Data" Settings Option
+- **Status:** complete
 
 ### Phase 10: SaaS & Advanced Settings
 <!-- 

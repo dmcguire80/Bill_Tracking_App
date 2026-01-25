@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.9.1 - Mobile & UX Polish
+### Added
+- **Scroll to Today**: New button in dashboard header to jump to current date.
+- **Preferences**: New Settings tab with "Hide Old Data" toggle.
+- **Mobile**: Sticky table headers and improved touch targets.
+
 ## v0.9.0 - Linear Budget Rebrand & Security
 ### Changed
 - **Rebrand**: Application renamed to **Linear Budget**. New logo and branding applied.

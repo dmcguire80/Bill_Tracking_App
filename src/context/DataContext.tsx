@@ -48,6 +48,8 @@ interface DataContextType {
     importData: (data: any) => Promise<void>;
     backupSettings: BackupSettings;
     updateBackupSettings: (settings: BackupSettings) => void;
+    hideOldData: boolean;
+    setHideOldData: (hide: boolean) => void;
     loading: boolean;
 }
 
@@ -62,6 +64,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     const [templates, setTemplates] = useState<BillTemplate[]>([]);
     const [paydayTemplates, setPaydayTemplates] = useState<PaydayTemplate[]>([]);
     const [backupSettings, setBackupSettings] = useState<BackupSettings>({ enabled: false, interval: 'daily', lastBackup: null });
+    const [hideOldData, setHideOldDataState] = useState(() => {
+        const saved = localStorage.getItem('hideOldData');
+        return saved ? JSON.parse(saved) : true; // Default to true
+    });
     const [loading, setLoading] = useState(true);
 
     // Initial Load & Real-time Sync (Firestore)
@@ -281,6 +287,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
     const updateBackupSettings = (settings: BackupSettings) => setBackupSettings(settings);
 
+    const setHideOldData = (hide: boolean) => {
+        setHideOldDataState(hide);
+        localStorage.setItem('hideOldData', JSON.stringify(hide));
+    };
+
     return (
         <DataContext.Provider value={{
             entries,
@@ -304,6 +315,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             importData,
             backupSettings,
             updateBackupSettings,
+            hideOldData,
+            setHideOldData,
             loading
         }}>
             {children}

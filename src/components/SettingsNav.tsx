@@ -8,6 +8,7 @@ export const SettingsNav = () => {
         { path: '/settings/paydays', label: 'Manage Paydays' },
         { path: '/settings/accounts', label: 'Manage Accounts' },
         { path: '/settings/data', label: 'Data Management' },
+        { path: '/settings/preferences', label: 'Preferences' },
     ];
 
     return (

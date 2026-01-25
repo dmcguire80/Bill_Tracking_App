@@ -59,7 +59,7 @@ const Row = ({ entry, onTogglePaid, onEdit, onDelete }: {
 
     if (isPayday) {
         return (
-            <tr className="bg-emerald-500/10 border-y border-emerald-500/20 font-bold text-white relative group">
+            <tr id={`row-${entry.id}`} className="bg-emerald-500/10 border-y border-emerald-500/20 font-bold text-white relative group">
                 <td className="px-2 py-3 sticky left-0 z-20 bg-[#0f1d18] border-r border-emerald-500/20 text-center text-xs shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">
                     {entry.month}
                 </td>
@@ -104,7 +104,7 @@ const Row = ({ entry, onTogglePaid, onEdit, onDelete }: {
 
     const bill = entry as Bill;
     return (
-        <tr className={clsx(
+        <tr id={`row-${entry.id}`} className={clsx(
             "border-b border-white/5 transition-colors hover:bg-white/5 group",
             bill.paid && "opacity-50 grayscale-[0.5]"
         )}>
@@ -140,14 +140,16 @@ const Row = ({ entry, onTogglePaid, onEdit, onDelete }: {
                     {bill.paid ? <Check size={14} strokeWidth={3} /> : <Circle size={14} />}
                 </button>
             </td>
-            {accounts.map((account) => {
-                const amount = bill.amounts[account.name];
-                return (
-                    <td key={account.id} className="px-4 py-3 text-right font-mono text-neutral-300">
-                        {amount !== undefined ? formatCurrency(amount) : <span className="text-white/10">-</span>}
-                    </td>
-                );
-            })}
-        </tr>
+            {
+                accounts.map((account) => {
+                    const amount = bill.amounts[account.name];
+                    return (
+                        <td key={account.id} className="px-4 py-3 text-right font-mono text-neutral-300">
+                            {amount !== undefined ? formatCurrency(amount) : <span className="text-white/10">-</span>}
+                        </td>
+                    );
+                })
+            }
+        </tr >
     );
 };
