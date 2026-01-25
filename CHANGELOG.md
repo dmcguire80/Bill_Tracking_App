@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.9.6 - CD Pipeline
+### Added
+- **GitHub Actions**: Added `.github/workflows/deploy.yml` for automated SSH deployment on tag push.
+
 ## v0.9.5 - Automation
 ### Added
 - **Update Script**: Added `scripts/update.sh` to automate manual server updates.

@@ -23,13 +23,36 @@ We have included an update script in the repository.
 ### 2. Auto-Update (Cron Job)
 To check for updates automatically every night at 4am:
 
+**Option A: The One-Liner (Easiest)**
+Run this single command:
 ```bash
-crontab -e
-# Add this line:
-0 4 * * * cd /opt/bill-tracker && ./scripts/update.sh >> /var/log/bill-tracker-update.log 2>&1
+(crontab -l 2>/dev/null; echo "0 4 * * * cd /opt/bill-tracker && ./scripts/update.sh >> /var/log/bill-tracker-update.log 2>&1") | crontab -
 ```
 
-### 3. Manual Commands (Under the hood)
+**Option B: Manual Editor**
+1. Run `crontab -e`
+2. Paste this line at the bottom:
+   `0 4 * * * cd /opt/bill-tracker && ./scripts/update.sh >> /var/log/bill-tracker-update.log 2>&1`
+3. Save and exit (`Esc` -> `:wq` for vim, or `Ctrl+X` -> `Y` for nano).
+
+### 3. Continuous Deployment (GitHub Actions)
+Fully automated "Push-to-Deploy". When you push a new tag (e.g., `v0.9.6`), GitHub will log into your server and run the update for you.
+
+**Setup Instructions:**
+1.  Go to your GitHub Repo -> **Settings** -> **Secrets and variables** -> **Actions**.
+2.  Click **New repository secret**.
+3.  Add the following secrets:
+    *   `SSH_HOST`: Your server's public IP or hostname (e.g., `home.dmcguire.com`).
+    *   `SSH_USERNAME`: The user to log in as (e.g., `root`).
+    *   `SSH_KEY`: Your private SSH key (contents of `~/.ssh/id_rsa`).
+        *   *Note: This key must authorize access to the server without a password.*
+
+**How to trigger:**
+```bash
+git tag v0.9.6
+git push origin v0.9.6
+# GitHub Action will start automatically
+```
 
 ## Application Container (Proxmox LXC)
 *   **OS**: Debian/Ubuntu
