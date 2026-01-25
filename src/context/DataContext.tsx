@@ -20,11 +20,7 @@ import {
 // No local defaults needed with Firebase
 
 
-export interface BackupSettings {
-    enabled: boolean;
-    interval: 'daily' | 'weekly';
-    lastBackup: string | null;
-}
+
 
 interface DataContextType {
     entries: Entry[];
@@ -46,8 +42,9 @@ interface DataContextType {
     deletePaydayTemplate: (id: string) => void;
     exportData: () => any;
     importData: (data: any) => Promise<void>;
-    backupSettings: BackupSettings;
-    updateBackupSettings: (settings: BackupSettings) => void;
+    exportData: () => any;
+    importData: (data: any) => Promise<void>;
+    deleteAccountData: () => Promise<void>;
     hideOldData: boolean;
     setHideOldData: (hide: boolean) => void;
     loading: boolean;
@@ -63,7 +60,6 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [templates, setTemplates] = useState<BillTemplate[]>([]);
     const [paydayTemplates, setPaydayTemplates] = useState<PaydayTemplate[]>([]);
-    const [backupSettings, setBackupSettings] = useState<BackupSettings>({ enabled: false, interval: 'daily', lastBackup: null });
     const [hideOldData, setHideOldDataState] = useState(() => {
         const saved = localStorage.getItem('hideOldData');
         return saved ? JSON.parse(saved) : true; // Default to true
@@ -285,7 +281,27 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const updateBackupSettings = (settings: BackupSettings) => setBackupSettings(settings);
+    const deleteAccountData = async () => {
+        if (!user) return;
+        const batch = writeBatch(db);
+
+        // Helper to queue deletes
+        const queueDeletes = (items: any[], collectionName: string) => {
+            items.forEach(item => {
+                if (item.firebaseId) {
+                    batch.delete(doc(db, collectionName, item.firebaseId));
+                }
+            });
+        };
+
+        // Queue all deletes
+        queueDeletes(entries, 'entries');
+        queueDeletes(accounts, 'accounts');
+        queueDeletes(templates, 'templates');
+        queueDeletes(paydayTemplates, 'paydayTemplates');
+
+        await batch.commit();
+    };
 
     const setHideOldData = (hide: boolean) => {
         setHideOldDataState(hide);
@@ -313,8 +329,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             deletePaydayTemplate,
             exportData: () => ({ entries, accounts, templates, paydayTemplates }),
             importData,
-            backupSettings,
-            updateBackupSettings,
+            importData,
+            deleteAccountData,
             hideOldData,
             setHideOldData,
             loading

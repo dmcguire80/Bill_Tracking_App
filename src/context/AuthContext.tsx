@@ -6,6 +6,7 @@ import {
     onAuthStateChanged,
     sendPasswordResetEmail,
     updateProfile,
+    deleteUser,
     type User
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
@@ -17,6 +18,7 @@ interface AuthContextType {
     login: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     resetPassword: (email: string) => Promise<void>;
+    deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,13 +62,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await sendPasswordResetEmail(auth, email);
     };
 
+    const deleteAccount = async () => {
+        if (user) {
+            await deleteUser(user);
+        }
+    };
+
     const value = {
         user,
         loading,
         signup,
         login,
         logout,
-        resetPassword
+        resetPassword,
+        deleteAccount
     };
 
     return (

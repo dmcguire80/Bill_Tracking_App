@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.9.3 - Privacy & Cleanup
+### Added
+- **Delete Account**: Users can now permanently delete their account and all data (GDPR compliance).
+### Removed
+- **Legacy Backups**: Removed the legacy self-hosted automated backup system in favor of Firebase Cloud Sync.
+
 ## v0.9.2 - Bug Fixes
 ### Fixed
 - **Settings Navigation**: Fixed missing navigation menu on Preferences page.

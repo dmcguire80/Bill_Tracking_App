@@ -132,10 +132,12 @@ Phase 1
 <!-- 
   WHAT: Subscription model and advanced user management.
 -->
+- [ ] Cleanup Legacy Code (server.js, LXC)
+- [ ] "Delete Account" Feature (GDPR compliance)
 - [ ] Setup Stripe Integration (Firebase Extension)
 - [ ] Advanced Settings (Profile management, Dark/Light mode)
 - [ ] Biometric/MFA Login Options
-- **Status:** pending
+- **Status:** in_progress
 
 ## Key Questions
 <!-- 
