@@ -7,6 +7,7 @@ export const SettingsNav = () => {
         { path: '/settings/bills', label: 'Manage Bills' },
         { path: '/settings/paydays', label: 'Manage Paydays' },
         { path: '/settings/accounts', label: 'Manage Accounts' },
+        { path: '/settings/data', label: 'Data Management' },
     ];
 
     return (
@@ -16,8 +17,8 @@ export const SettingsNav = () => {
                     key={path}
                     to={path}
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${location.pathname === path
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : 'text-neutral-400 hover:text-white hover:bg-white/5'
                         }`}
                 >
                     {label}

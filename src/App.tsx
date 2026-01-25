@@ -15,6 +15,7 @@ import { uuid } from './utils/uuid';
 import { ManageBills } from './pages/ManageBills';
 import { ManageAccounts } from './pages/ManageAccounts';
 import { ManagePaydays } from './pages/ManagePaydays';
+import { DataManagement } from './pages/DataManagement';
 import { Analytics } from './pages/Analytics';
 
 function Dashboard() {
@@ -172,6 +173,7 @@ function App() {
           <Route path="/settings/bills" element={<ManageBills />} />
           <Route path="/settings/accounts" element={<ManageAccounts />} />
           <Route path="/settings/paydays" element={<ManagePaydays />} />
+          <Route path="/settings/data" element={<DataManagement />} />
         </Routes>
       </Layout>
     </BrowserRouter>

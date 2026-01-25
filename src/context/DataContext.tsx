@@ -30,6 +30,14 @@ interface DataContextType {
     addPaydayTemplate: (template: PaydayTemplate) => void;
     updatePaydayTemplate: (template: PaydayTemplate) => void;
     deletePaydayTemplate: (id: string) => void;
+
+    exportData: () => {
+        entries: Entry[];
+        accounts: Account[];
+        templates: BillTemplate[];
+        paydayTemplates: PaydayTemplate[];
+    };
+    importData: (data: any) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -206,7 +214,22 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             addEntry, updateEntry, deleteEntry,
             addAccount, removeAccount, updateAccount, reorderAccounts,
             addTemplate, updateTemplate, deleteTemplate,
-            addPaydayTemplate, updatePaydayTemplate, deletePaydayTemplate
+            addPaydayTemplate, updatePaydayTemplate, deletePaydayTemplate,
+            exportData: () => ({
+                entries,
+                accounts,
+                templates,
+                paydayTemplates
+            }),
+            importData: (data: any) => {
+                if (!data || typeof data !== 'object') throw new Error('Invalid data format');
+
+                // Basic validation
+                if (Array.isArray(data.entries)) setEntries(data.entries);
+                if (Array.isArray(data.accounts)) setAccounts(data.accounts);
+                if (Array.isArray(data.templates)) setTemplates(migrateTemplates(data.templates));
+                if (Array.isArray(data.paydayTemplates)) setPaydayTemplates(migrateTemplates(data.paydayTemplates));
+            }
         }}>
             {children}
         </DataContext.Provider>
