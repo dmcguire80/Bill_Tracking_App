@@ -169,24 +169,43 @@ function App() {
     );
   }
 
-  // If no accounts exist (and not loading), show setup
-  if (accounts.length === 0) {
-    return <SetupWizard onComplete={handleSetupComplete} />;
-  }
-
   return (
     <BrowserRouter>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/settings" element={<Navigate to="/settings/bills" replace />} />
-          <Route path="/settings/bills" element={<ManageBills />} />
-          <Route path="/settings/accounts" element={<ManageAccounts />} />
-          <Route path="/settings/paydays" element={<ManagePaydays />} />
-          <Route path="/settings/data" element={<DataManagement />} />
-        </Routes>
-      </Layout>
+      <Routes>
+        <Route path="/setup" element={
+          accounts.length > 0 ? <Navigate to="/" replace /> : <SetupWizard onComplete={handleSetupComplete} />
+        } />
+
+        <Route path="/" element={
+          accounts.length === 0 ? <Navigate to="/setup" replace /> : (
+            <Layout>
+              <Dashboard />
+            </Layout>
+          )
+        } />
+
+        <Route path="/analytics" element={
+          accounts.length === 0 ? <Navigate to="/setup" replace /> : (
+            <Layout>
+              <Analytics />
+            </Layout>
+          )
+        } />
+
+        <Route path="/settings/*" element={
+          accounts.length === 0 ? <Navigate to="/setup" replace /> : (
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Navigate to="bills" replace />} />
+                <Route path="bills" element={<ManageBills />} />
+                <Route path="accounts" element={<ManageAccounts />} />
+                <Route path="paydays" element={<ManagePaydays />} />
+                <Route path="data" element={<DataManagement />} />
+              </Routes>
+            </Layout>
+          )
+        } />
+      </Routes>
     </BrowserRouter>
   );
 }

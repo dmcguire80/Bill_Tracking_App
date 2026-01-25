@@ -193,7 +193,37 @@ export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
                                 <p className="text-xl text-neutral-300 max-w-2xl mx-auto">
                                     Let's get you set up. We'll add your accounts, set a pay schedule, and add your bills.
                                 </p>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+
+                                <div className="flex justify-center gap-4 mt-8">
+                                    <label className="bg-white/5 hover:bg-white/10 text-emerald-400 border border-emerald-500/20 px-6 py-3 rounded-lg font-medium cursor-pointer transition-colors flex items-center gap-2">
+                                        <Wallet size={20} />
+                                        Restore Backup
+                                        <input
+                                            type="file"
+                                            accept=".json"
+                                            className="hidden"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+
+                                                const reader = new FileReader();
+                                                reader.onload = (event) => {
+                                                    try {
+                                                        const data = JSON.parse(event.target?.result as string);
+                                                        if (confirm('Restore data from this backup? This will overwrite any current data.')) {
+                                                            onComplete(data);
+                                                        }
+                                                    } catch (err) {
+                                                        alert('Invalid backup file');
+                                                    }
+                                                };
+                                                reader.readAsText(file);
+                                            }}
+                                        />
+                                    </label>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                                     <div className="bg-white/5 p-6 rounded-xl">
                                         <Wallet className="text-emerald-400 mb-3" size={32} />
                                         <h3 className="text-white font-semibold mb-2">Track Accounts</h3>
