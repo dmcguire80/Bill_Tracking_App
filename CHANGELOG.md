@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.9.2 - Bug Fixes
+### Fixed
+- **Settings Navigation**: Fixed missing navigation menu on Preferences page.
+
 ## v0.9.1 - Mobile & UX Polish
 ### Added
 - **Scroll to Today**: New button in dashboard header to jump to current date.
