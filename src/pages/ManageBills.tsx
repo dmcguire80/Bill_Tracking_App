@@ -140,7 +140,7 @@ export const ManageBills = () => {
 
                 {/* Template List */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {templates.map(t => (
+                    {templates.slice().sort((a, b) => a.name.localeCompare(b.name)).map(t => (
                         <div key={t.id} className="bg-[#1e293b] border border-white/10 rounded-xl p-6 relative group">
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex-1">
@@ -369,7 +369,7 @@ export const ManageBills = () => {
                                 <div>
                                     <label className="block text-sm text-neutral-400 mb-2">Amounts</label>
                                     <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
-                                        {accounts.map(acc => (
+                                        {accounts.slice().sort((a, b) => a.name.localeCompare(b.name)).map(acc => (
                                             <div key={acc.id} className="flex items-center gap-2">
                                                 <span className="w-20 text-xs text-neutral-400 truncate">{acc.name}</span>
                                                 <input

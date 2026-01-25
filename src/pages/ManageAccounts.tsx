@@ -103,7 +103,7 @@ export const ManageAccounts = () => {
 
                 {/* Account List */}
                 <div className="space-y-3 max-w-3xl">
-                    {accounts.map((account, index) => (
+                    {accounts.slice().sort((a, b) => a.name.localeCompare(b.name)).map((account, index) => (
                         <div
                             key={account.id}
                             className="bg-white/5 border border-white/10 rounded-xl p-4 flex justify-between items-center group hover:bg-white/10 transition-colors"
