@@ -2,7 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
-## [v0.7.13] - 2026-01-24
+## v0.8.0 (2026-01-25)
+### Major Features
+- **Authentication**: Added secure Login, Signup, and Forgot Password flows.
+- **Cloud Sync**: Migrated from local JSON storage to Google Cloud Firestore (Real-time sync).
+- **Multi-User Support**: Data is now isolated per user account.
+- **Migration Tool**: Added utility to migrate legacy server data to the cloud.
+
+### Infrastructure
+- **Protected Routes**: Dashboard and Settings are now guarded by authentication.
+- **Firebase Integration**: Full SDK setup with Auth and Firestore.
+
+## v0.7.13 (2026-01-24)
 ### Added
 - **Update Command**: Created a shell alias `update` that runs the full installation/update script. Check `/usr/local/bin/update` in the container.
 
