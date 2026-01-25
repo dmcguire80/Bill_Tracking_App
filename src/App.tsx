@@ -150,16 +150,27 @@ function Dashboard() {
   );
 }
 
-function App() {
-  const [setupComplete, setSetupComplete] = useState(() => {
-    return localStorage.getItem('setupComplete') === 'true';
-  });
 
-  const handleSetupComplete = () => {
-    setSetupComplete(true);
+function App() {
+  const { accounts, loading, importData } = useData();
+
+  const handleSetupComplete = (data: any) => {
+    importData(data);
   };
 
-  if (!setupComplete) {
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-emerald-500/80 font-mono text-sm animate-pulse">Syncing data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If no accounts exist (and not loading), show setup
+  if (accounts.length === 0) {
     return <SetupWizard onComplete={handleSetupComplete} />;
   }
 

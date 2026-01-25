@@ -4,8 +4,9 @@ import type { Account, BillTemplate, PaydayTemplate, RecurrenceType } from '../t
 import { generateEntries } from '../utils/generator';
 import { uuid } from '../utils/uuid';
 
+
 interface SetupWizardProps {
-    onComplete: () => void;
+    onComplete: (data: any) => void;
 }
 
 export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
@@ -125,14 +126,13 @@ export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
         const year = new Date().getFullYear();
         const entries = generateEntries(billTemplates, paydayTemplates, year);
 
-        // 2. Save Everything
-        localStorage.setItem('accounts', JSON.stringify(accounts));
-        localStorage.setItem('templates', JSON.stringify(billTemplates));
-        localStorage.setItem('paydayTemplates', JSON.stringify(paydayTemplates));
-        localStorage.setItem('entries', JSON.stringify(entries));
-        localStorage.setItem('setupComplete', 'true');
-
-        onComplete();
+        // 2. Pass data to parent to handle saving (Context/Server)
+        onComplete({
+            accounts,
+            templates: billTemplates,
+            paydayTemplates,
+            entries
+        });
     };
 
     const canProceed = () => {
