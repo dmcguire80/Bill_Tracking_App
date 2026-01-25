@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.9.9 - Auto-Releases
+### Added
+- **GitHub Workflow**: Added automatic GitHub Release creation with generated notes.
+
 ## v0.9.8 - CD Trigger
 ### Changed
 - **Trigger**: Empty release to trigger the Self-Hosted Runner.
