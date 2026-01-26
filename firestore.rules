@@ -1,12 +1,93 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // --- HELPER FUNCTIONS ---
     
-    // Generic rule for all user-data collections
-    // Users can only read/write documents where the userId field matches their own UID.
-    match /{collection}/{document} {
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if the user is accessing their own data
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Validate standard fields required for all user-owned docs
+    function isValidUserDoc(data) {
+      return data.userId is string && isOwner(data.userId);
+    }
+
+    // --- SCHEMAS ---
+
+    // 1. Accounts
+    // Interface: { id, name, order, userId }
+    match /accounts/{accountId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if isValidUserDoc(request.resource.data)
+                    && request.resource.data.keys().hasAll(['id', 'name', 'order', 'userId'])
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.order is number;
+      allow update: if isOwner(resource.data.userId)
+                    && isValidUserDoc(request.resource.data)
+                    && request.resource.data.name is string
+                    && request.resource.data.order is number;
+    }
+
+    // 2. Entries (Bills & Paydays)
+    match /entries/{entryId} {
+      // Common checks
+      function isValidEntryBase(data) {
+        return isValidUserDoc(data)
+               && data.keys().hasAll(['id', 'type', 'date', 'month', 'name'])
+               && data.date is number
+               && data.month is string
+               && data.name is string;
+      }
+
+      function isValidBill(data) {
+        return data.type == 'bill'
+               && data.paid is bool
+               && (data.amounts == null || data.amounts is map); 
+      }
+
+      function isValidPayday(data) {
+        return data.type == 'payday'
+               && (data.balances == null || data.balances is map);
+      }
+
+      allow read, delete: if isOwner(resource.data.userId);
+      
+      allow create: if isValidEntryBase(request.resource.data)
+                    && (
+                      isValidBill(request.resource.data) || 
+                      isValidPayday(request.resource.data)
+                    );
+                    
+      allow update: if isOwner(resource.data.userId)
+                    && isValidEntryBase(request.resource.data)
+                    && (
+                      isValidBill(request.resource.data) || 
+                      isValidPayday(request.resource.data)
+                    );
+    }
+
+    // 3. Templates (Bill Templates)
+    match /templates/{templateId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create, update: if isValidUserDoc(request.resource.data)
+                            && request.resource.data.name is string
+                            && request.resource.data.recurrence is string;
+    }
+
+    // 4. Payday Templates
+    match /paydayTemplates/{templateId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create, update: if isValidUserDoc(request.resource.data)
+                            && request.resource.data.name is string
+                            && request.resource.data.recurrence is string;
     }
   }
 }
