@@ -16,7 +16,10 @@ import { ManageBills } from './pages/ManageBills';
 import { ManageAccounts } from './pages/ManageAccounts';
 import { ManagePaydays } from './pages/ManagePaydays';
 import { DataManagement } from './pages/DataManagement';
-import { SettingsPreferences } from './pages/SettingsPreferences';
+import { SettingsLayout } from './components/SettingsLayout';
+import { SettingsProfile } from './pages/SettingsProfile';
+import { SettingsAppearance } from './pages/SettingsAppearance';
+import { SettingsSecurity } from './pages/SettingsSecurity';
 import { Analytics } from './pages/Analytics';
 
 function Dashboard() {
@@ -29,31 +32,31 @@ function Dashboard() {
 
   const visibleData = hideOldData
     ? calculatedData.filter(entry => {
-        // Parse "Jan '26" + date to Date object
-        const [monthName, yearShort] = entry.month.split(" '");
-        const year = 2000 + parseInt(yearShort || '26');
-        const monthIndex = [
-          'Jan',
-          'Feb',
-          'Mar',
-          'Apr',
-          'May',
-          'Jun',
-          'Jul',
-          'Aug',
-          'Sep',
-          'Oct',
-          'Nov',
-          'Dec',
-        ].indexOf(monthName);
+      // Parse "Jan '26" + date to Date object
+      const [monthName, yearShort] = entry.month.split(" '");
+      const year = 2000 + parseInt(yearShort || '26');
+      const monthIndex = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ].indexOf(monthName);
 
-        const entryDate = new Date(year, monthIndex, entry.date);
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - 56); // 8 weeks
+      const entryDate = new Date(year, monthIndex, entry.date);
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 56); // 8 weeks
 
-        // Keep future dates and recent past
-        return entryDate >= cutoff;
-      })
+      // Keep future dates and recent past
+      return entryDate >= cutoff;
+    })
     : calculatedData;
 
   const handleScrollToToday = () => {
@@ -287,27 +290,26 @@ function App() {
         />
 
         <Route
-          path="/settings/*"
+          path="/settings"
           element={
             <ProtectedRoute>
               {accounts.length === 0 ? (
                 <Navigate to="/setup" replace />
               ) : (
-                <Layout>
-                  <Routes>
-                    <Route path="/" element={<Navigate to="bills" replace />} />
-                    <Route path="bills" element={<ManageBills />} />
-                    <Route path="accounts" element={<ManageAccounts />} />
-                    <Route path="paydays" element={<ManagePaydays />} />
-                    <Route path="accounts" element={<ManageAccounts />} />
-                    <Route path="data" element={<DataManagement />} />
-                    <Route path="preferences" element={<SettingsPreferences />} />
-                  </Routes>
-                </Layout>
+                <SettingsLayout />
               )}
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<Navigate to="profile" replace />} />
+          <Route path="profile" element={<SettingsProfile />} />
+          <Route path="appearance" element={<SettingsAppearance />} />
+          <Route path="security" element={<SettingsSecurity />} />
+          <Route path="data" element={<DataManagement />} />
+          <Route path="bills" element={<ManageBills />} />
+          <Route path="paydays" element={<ManagePaydays />} />
+          <Route path="accounts" element={<ManageAccounts />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );

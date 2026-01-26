@@ -19,6 +19,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   deleteAccount: () => Promise<void>;
+  updateUserProfile: (displayName: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -68,6 +69,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateUserProfile = async (displayName: string) => {
+    if (user) {
+      await updateProfile(user, { displayName });
+      // Force refresh user state locally
+      setUser({ ...user, displayName });
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -76,6 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     logout,
     resetPassword,
     deleteAccount,
+    updateUserProfile,
   };
 
   return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;

@@ -115,7 +115,7 @@ Phase 1
   WHAT: Secure the app, branding, and prepare for public hosting.
 -->
 - [x] Configure Firebase Hosting (`firebase.json`)
-- [x] Implement `firestore.rules` (Security Rules)
+- [x] Implement Strict Schema Validation in `firestore.rules` (Hardened)
 - [x] Design & Add Logo/Favicon
 - **Status:** complete
 
@@ -187,6 +187,7 @@ Phase 1
 -->
 | Error | Attempt | Resolution |
 |-------|---------|------------|
+| Deployment Crash | 1 | Production runner missing `.env` variables. Reverted to hardcoded keys for hotfix. |
 |       | 1       |            |
 
 ## Notes
