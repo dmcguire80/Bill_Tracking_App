@@ -18,7 +18,7 @@ export const SettingsLayout = () => {
     <Layout>
       <Navigation />
 
-      <div className="max-w-6xl mx-auto py-8">
+      <div className="w-full">
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-white">Settings</h1>
           <p className="text-neutral-400 mt-2">
@@ -35,10 +35,9 @@ export const SettingsLayout = () => {
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${
-                      isActive
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                    `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${isActive
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
                     }`
                   }
                 >
