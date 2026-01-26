@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { useData } from '../context/DataContext';
-import { Navigation } from '../components/Navigation';
-import { SettingsNav } from '../components/SettingsNav';
 import { Plus, Trash2, Calendar, RefreshCw, Edit2 } from 'lucide-react';
 import type { BillTemplate, RecurrenceType } from '../types';
 import { uuid } from '../utils/uuid';
@@ -120,10 +118,7 @@ export const ManageBills = () => {
 
   return (
     <>
-      <Navigation />
-
       <div className="space-y-8">
-        <SettingsNav />
 
         <div className="flex justify-between items-end">
           <div>

@@ -302,6 +302,7 @@ function App() {
           }
         >
           <Route index element={<Navigate to="profile" replace />} />
+          <Route path="preferences" element={<Navigate to="appearance" replace />} />
           <Route path="profile" element={<SettingsProfile />} />
           <Route path="appearance" element={<SettingsAppearance />} />
           <Route path="security" element={<SettingsSecurity />} />

@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { useData } from '../context/DataContext';
-import { Navigation } from '../components/Navigation';
-import { SettingsNav } from '../components/SettingsNav';
 import { Trash2, Plus, AlertCircle, Edit2, ArrowUp, ArrowDown, Save, X } from 'lucide-react';
 import type { Account } from '../types';
 
@@ -62,10 +60,7 @@ export const ManageAccounts = () => {
 
   return (
     <>
-      <Navigation />
-
       <div className="space-y-8">
-        <SettingsNav />
 
         <div>
           <h2 className="text-2xl font-bold text-white mb-2">Manage Accounts</h2>
