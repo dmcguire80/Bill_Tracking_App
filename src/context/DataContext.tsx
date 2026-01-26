@@ -6,340 +6,344 @@ import { uuid } from '../utils/uuid';
 import { useAuth } from './AuthContext';
 import { db } from '../config/firebase';
 import {
-    collection,
-    query,
-    where,
-    onSnapshot,
-    addDoc,
-    updateDoc,
-    deleteDoc,
-    doc,
-    writeBatch
+  collection,
+  query,
+  where,
+  onSnapshot,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  writeBatch,
 } from 'firebase/firestore';
 
 // No local defaults needed with Firebase
 
-
-
-
 interface DataContextType {
-    entries: Entry[];
-    accounts: Account[];
-    templates: BillTemplate[];
-    paydayTemplates: PaydayTemplate[];
-    addEntry: (entry: Entry) => void;
-    updateEntry: (entry: Entry) => void;
-    deleteEntry: (id: string) => void;
-    addAccount: (name: string) => void;
-    removeAccount: (id: string) => void;
-    updateAccount: (id: string, name: string) => void;
-    reorderAccounts: (accounts: Account[]) => void;
-    addTemplate: (template: BillTemplate) => void;
-    updateTemplate: (template: BillTemplate) => void;
-    deleteTemplate: (id: string) => void;
-    addPaydayTemplate: (template: PaydayTemplate) => void;
-    updatePaydayTemplate: (template: PaydayTemplate) => void;
-    deletePaydayTemplate: (id: string) => void;
-    exportData: () => any;
-    importData: (data: any) => Promise<void>;
-    deleteAccountData: () => Promise<void>;
-    hideOldData: boolean;
-    setHideOldData: (hide: boolean) => void;
-    loading: boolean;
+  entries: Entry[];
+  accounts: Account[];
+  templates: BillTemplate[];
+  paydayTemplates: PaydayTemplate[];
+  addEntry: (entry: Entry) => void;
+  updateEntry: (entry: Entry) => void;
+  deleteEntry: (id: string) => void;
+  addAccount: (name: string) => void;
+  removeAccount: (id: string) => void;
+  updateAccount: (id: string, name: string) => void;
+  reorderAccounts: (accounts: Account[]) => void;
+  addTemplate: (template: BillTemplate) => void;
+  updateTemplate: (template: BillTemplate) => void;
+  deleteTemplate: (id: string) => void;
+  addPaydayTemplate: (template: PaydayTemplate) => void;
+  updatePaydayTemplate: (template: PaydayTemplate) => void;
+  deletePaydayTemplate: (id: string) => void;
+  exportData: () => any;
+  importData: (data: any) => Promise<void>;
+  deleteAccountData: () => Promise<void>;
+  hideOldData: boolean;
+  setHideOldData: (hide: boolean) => void;
+  loading: boolean;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
-    const { user } = useAuth();
+  const { user } = useAuth();
 
-    // State
-    const [entries, setEntries] = useState<Entry[]>([]);
-    const [accounts, setAccounts] = useState<Account[]>([]);
-    const [templates, setTemplates] = useState<BillTemplate[]>([]);
-    const [paydayTemplates, setPaydayTemplates] = useState<PaydayTemplate[]>([]);
-    const [hideOldData, setHideOldDataState] = useState(() => {
-        const saved = localStorage.getItem('hideOldData');
-        return saved ? JSON.parse(saved) : true; // Default to true
-    });
-    const [loading, setLoading] = useState(true);
+  // State
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [templates, setTemplates] = useState<BillTemplate[]>([]);
+  const [paydayTemplates, setPaydayTemplates] = useState<PaydayTemplate[]>([]);
+  const [hideOldData, setHideOldDataState] = useState(() => {
+    const saved = localStorage.getItem('hideOldData');
+    return saved ? JSON.parse(saved) : true; // Default to true
+  });
+  const [loading, setLoading] = useState(true);
 
-    // Initial Load & Real-time Sync (Firestore)
-    useEffect(() => {
-        if (!user) {
-            setEntries([]);
-            setAccounts([]);
-            setTemplates([]);
-            setPaydayTemplates([]);
-            setLoading(false);
-            return;
-        }
+  // Initial Load & Real-time Sync (Firestore)
+  useEffect(() => {
+    if (!user) {
+      setEntries([]);
+      setAccounts([]);
+      setTemplates([]);
+      setPaydayTemplates([]);
+      setLoading(false);
+      return;
+    }
 
-        setLoading(true);
+    setLoading(true);
 
-        // Helper to subscribe to a collection
-        const subscribe = (collectionName: string, setter: (data: any[]) => void) => {
-            const q = query(collection(db, collectionName), where('userId', '==', user.uid));
-            return onSnapshot(q, (snapshot) => {
-                const data = snapshot.docs.map(doc => ({ ...doc.data(), firebaseId: doc.id }));
-                setter(data);
-            });
-        };
-
-        const unsubEntries = subscribe('entries', (data) => setEntries(data as Entry[]));
-        const unsubAccounts = subscribe('accounts', (data) => setAccounts(data.sort((a, b) => a.order - b.order) as Account[]));
-        const unsubTemplates = subscribe('templates', (data) => setTemplates(data as BillTemplate[]));
-        const unsubPaydayTemplates = subscribe('paydayTemplates', (data) => setPaydayTemplates(data as PaydayTemplate[]));
-
-        // Backup settings are less critical, can be stored in user profile or separate doc
-        // For now, simpler to not sync them or store in a 'settings' collection
-        setLoading(false);
-
-        return () => {
-            unsubEntries();
-            unsubAccounts();
-            unsubTemplates();
-            unsubPaydayTemplates();
-        };
-    }, [user]);
-
-    // Helper to remove undefined fields recursively
-    const sanitizeData = (data: any): any => {
-        if (Array.isArray(data)) {
-            return data.map(item => sanitizeData(item));
-        } else if (data !== null && typeof data === 'object') {
-            return Object.entries(data).reduce((acc, [key, value]) => {
-                if (value !== undefined) {
-                    acc[key] = sanitizeData(value);
-                }
-                return acc;
-            }, {} as any);
-        }
-        return data;
+    // Helper to subscribe to a collection
+    const subscribe = (collectionName: string, setter: (data: any[]) => void) => {
+      const q = query(collection(db, collectionName), where('userId', '==', user.uid));
+      return onSnapshot(q, snapshot => {
+        const data = snapshot.docs.map(doc => ({ ...doc.data(), firebaseId: doc.id }));
+        setter(data);
+      });
     };
 
-    // Firestore Actions Helper
-    const addToFirestore = async (collectionName: string, data: any) => {
-        if (!user) return;
-        const cleanData = sanitizeData({ ...data, userId: user.uid });
-        await addDoc(collection(db, collectionName), cleanData);
-    };
-
-    const updateInFirestore = async (collectionName: string, _: string, data: any) => {
-        if (!user) return;
-
-        const firebaseId = (data as any).firebaseId;
-        if (firebaseId) {
-            // Remove firebaseId before saving
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { firebaseId: _fid, ...rest } = data;
-            const cleanData = sanitizeData(rest);
-            await updateDoc(doc(db, collectionName, firebaseId), cleanData);
-        }
-    };
-
-    const deleteFromFirestore = async (collectionName: string, id: string, objects: any[]) => {
-        if (!user) return;
-        const obj = objects.find(o => o.id === id);
-        const firebaseId = (obj as any)?.firebaseId;
-        if (firebaseId) {
-            await deleteDoc(doc(db, collectionName, firebaseId));
-        }
-    };
-
-    // Actions
-    const addEntry = (entry: Entry) => addToFirestore('entries', entry);
-    const updateEntry = (entry: Entry) => updateInFirestore('entries', entry.id, entry);
-    const deleteEntry = (id: string) => deleteFromFirestore('entries', id, entries);
-
-    const addAccount = (name: string) => {
-        if (!accounts.some(a => a.name === name)) {
-            addToFirestore('accounts', { id: uuid(), name, order: accounts.length });
-        }
-    };
-
-    const updateAccount = (id: string, name: string) => {
-        const account = accounts.find(a => a.id === id);
-        if (account) updateInFirestore('accounts', id, { ...account, name });
-    };
-
-    const removeAccount = (id: string) => deleteFromFirestore('accounts', id, accounts);
-
-    const reorderAccounts = (newOrder: Account[]) => {
-        // Batch update for reordering
-        if (!user) return;
-        const batch = writeBatch(db);
-        newOrder.forEach((acc, index) => {
-            if ((acc as any).firebaseId) {
-                const ref = doc(db, 'accounts', (acc as any).firebaseId);
-                batch.update(ref, { order: index });
-            }
-        });
-        batch.commit();
-    };
-
-    const addTemplate = (template: BillTemplate) => {
-        addToFirestore('templates', template);
-        syncEntriesWithTemplate(template);
-    };
-
-    const updateTemplate = (template: BillTemplate) => {
-        updateInFirestore('templates', template.id, template);
-        syncEntriesWithTemplate(template);
-    };
-
-    const deleteTemplate = (id: string) => {
-        const template = templates.find(t => t.id === id);
-        if (template) {
-            deleteFromFirestore('templates', id, templates);
-            syncEntriesWithTemplate(template, true);
-        }
-    };
-
-    const addPaydayTemplate = (template: PaydayTemplate) => {
-        addToFirestore('paydayTemplates', template);
-        syncEntriesWithTemplate(template);
-    };
-
-    const updatePaydayTemplate = (template: PaydayTemplate) => {
-        updateInFirestore('paydayTemplates', template.id, template);
-        syncEntriesWithTemplate(template);
-    };
-
-    const deletePaydayTemplate = (id: string) => {
-        const template = paydayTemplates.find(t => t.id === id);
-        if (template) {
-            deleteFromFirestore('paydayTemplates', id, paydayTemplates);
-            syncEntriesWithTemplate(template, true);
-        }
-    };
-
-    // Helper to sync entries when templates change
-    // Note: This logic is tricky with Firestore. We generate entries LOCALLY, check duplicates LOCALLY,
-    // and then push NEW entries to Firestore. We do NOT delete old manual entries automatically via DB.
-    const syncEntriesWithTemplate = (template: BillTemplate | PaydayTemplate, isDeleted: boolean = false) => {
-        if (isDeleted) {
-            // Remove unpaid/future entries linked to this template
-            entries
-                .filter(e => e.templateId === template.id && !(e as Bill).paid)
-                .forEach(e => deleteFromFirestore('entries', e.id, entries));
-            return;
-        }
-
-        const isBillTemplate = 'amounts' in template;
-        const newGenerated = generateEntries(
-            isBillTemplate ? [template as BillTemplate] : [],
-            !isBillTemplate ? [template as PaydayTemplate] : [],
-            new Date().getFullYear()
-        );
-
-        newGenerated.forEach(gen => {
-            const alreadyExists = entries.some(e =>
-                e.templateId === template.id &&
-                e.month === gen.month &&
-                e.date === gen.date
-            );
-
-            if (!alreadyExists) {
-                addToFirestore('entries', gen);
-            }
-        });
-    };
-
-    const importData = async (data: any) => {
-        if (!user || !data) return;
-
-        // Use batch writes for performance (max 500 ops per batch)
-        const batch = writeBatch(db);
-        let count = 0;
-
-        const addToBatch = (collectionName: string, item: any) => {
-            // Generate a new ID if needed, or use existing
-            const docRef = doc(collection(db, collectionName));
-            const cleanData = sanitizeData({ ...item, userId: user.uid });
-            batch.set(docRef, cleanData); // Use set() with new docRef
-            count++;
-        };
-
-        if (Array.isArray(data.entries)) {
-            data.entries.forEach((item: any) => addToBatch('entries', item));
-        }
-        if (Array.isArray(data.accounts)) {
-            data.accounts.forEach((item: any) => addToBatch('accounts', item));
-        }
-        if (Array.isArray(data.templates)) {
-            data.templates.forEach((item: any) => addToBatch('templates', item));
-        }
-        if (Array.isArray(data.paydayTemplates)) {
-            data.paydayTemplates.forEach((item: any) => addToBatch('paydayTemplates', item));
-        }
-
-        if (count > 0) {
-            await batch.commit();
-        }
-    };
-
-    const deleteAccountData = async () => {
-        if (!user) return;
-        const batch = writeBatch(db);
-
-        // Helper to queue deletes
-        const queueDeletes = (items: any[], collectionName: string) => {
-            items.forEach(item => {
-                if (item.firebaseId) {
-                    batch.delete(doc(db, collectionName, item.firebaseId));
-                }
-            });
-        };
-
-        // Queue all deletes
-        queueDeletes(entries, 'entries');
-        queueDeletes(accounts, 'accounts');
-        queueDeletes(templates, 'templates');
-        queueDeletes(paydayTemplates, 'paydayTemplates');
-
-        await batch.commit();
-    };
-
-    const setHideOldData = (hide: boolean) => {
-        setHideOldDataState(hide);
-        localStorage.setItem('hideOldData', JSON.stringify(hide));
-    };
-
-    return (
-        <DataContext.Provider value={{
-            entries,
-            accounts,
-            templates,
-            paydayTemplates,
-            addEntry,
-            updateEntry,
-            deleteEntry,
-            addAccount,
-            removeAccount,
-            updateAccount,
-            reorderAccounts,
-            addTemplate,
-            updateTemplate,
-            deleteTemplate,
-            addPaydayTemplate,
-            updatePaydayTemplate,
-            deletePaydayTemplate,
-            exportData: () => ({ entries, accounts, templates, paydayTemplates }),
-            importData,
-            deleteAccountData,
-            hideOldData,
-            setHideOldData,
-            loading
-        }}>
-            {children}
-        </DataContext.Provider>
+    const unsubEntries = subscribe('entries', data => setEntries(data as Entry[]));
+    const unsubAccounts = subscribe('accounts', data =>
+      setAccounts(data.sort((a, b) => a.order - b.order) as Account[])
     );
+    const unsubTemplates = subscribe('templates', data => setTemplates(data as BillTemplate[]));
+    const unsubPaydayTemplates = subscribe('paydayTemplates', data =>
+      setPaydayTemplates(data as PaydayTemplate[])
+    );
+
+    // Backup settings are less critical, can be stored in user profile or separate doc
+    // For now, simpler to not sync them or store in a 'settings' collection
+    setLoading(false);
+
+    return () => {
+      unsubEntries();
+      unsubAccounts();
+      unsubTemplates();
+      unsubPaydayTemplates();
+    };
+  }, [user]);
+
+  // Helper to remove undefined fields recursively
+  const sanitizeData = (data: any): any => {
+    if (Array.isArray(data)) {
+      return data.map(item => sanitizeData(item));
+    } else if (data !== null && typeof data === 'object') {
+      return Object.entries(data).reduce((acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = sanitizeData(value);
+        }
+        return acc;
+      }, {} as any);
+    }
+    return data;
+  };
+
+  // Firestore Actions Helper
+  const addToFirestore = async (collectionName: string, data: any) => {
+    if (!user) return;
+    const cleanData = sanitizeData({ ...data, userId: user.uid });
+    await addDoc(collection(db, collectionName), cleanData);
+  };
+
+  const updateInFirestore = async (collectionName: string, _: string, data: any) => {
+    if (!user) return;
+
+    const firebaseId = (data as any).firebaseId;
+    if (firebaseId) {
+      // Remove firebaseId before saving
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { firebaseId: _fid, ...rest } = data;
+      const cleanData = sanitizeData(rest);
+      await updateDoc(doc(db, collectionName, firebaseId), cleanData);
+    }
+  };
+
+  const deleteFromFirestore = async (collectionName: string, id: string, objects: any[]) => {
+    if (!user) return;
+    const obj = objects.find(o => o.id === id);
+    const firebaseId = (obj as any)?.firebaseId;
+    if (firebaseId) {
+      await deleteDoc(doc(db, collectionName, firebaseId));
+    }
+  };
+
+  // Actions
+  const addEntry = (entry: Entry) => addToFirestore('entries', entry);
+  const updateEntry = (entry: Entry) => updateInFirestore('entries', entry.id, entry);
+  const deleteEntry = (id: string) => deleteFromFirestore('entries', id, entries);
+
+  const addAccount = (name: string) => {
+    if (!accounts.some(a => a.name === name)) {
+      addToFirestore('accounts', { id: uuid(), name, order: accounts.length });
+    }
+  };
+
+  const updateAccount = (id: string, name: string) => {
+    const account = accounts.find(a => a.id === id);
+    if (account) updateInFirestore('accounts', id, { ...account, name });
+  };
+
+  const removeAccount = (id: string) => deleteFromFirestore('accounts', id, accounts);
+
+  const reorderAccounts = (newOrder: Account[]) => {
+    // Batch update for reordering
+    if (!user) return;
+    const batch = writeBatch(db);
+    newOrder.forEach((acc, index) => {
+      if ((acc as any).firebaseId) {
+        const ref = doc(db, 'accounts', (acc as any).firebaseId);
+        batch.update(ref, { order: index });
+      }
+    });
+    batch.commit();
+  };
+
+  const addTemplate = (template: BillTemplate) => {
+    addToFirestore('templates', template);
+    syncEntriesWithTemplate(template);
+  };
+
+  const updateTemplate = (template: BillTemplate) => {
+    updateInFirestore('templates', template.id, template);
+    syncEntriesWithTemplate(template);
+  };
+
+  const deleteTemplate = (id: string) => {
+    const template = templates.find(t => t.id === id);
+    if (template) {
+      deleteFromFirestore('templates', id, templates);
+      syncEntriesWithTemplate(template, true);
+    }
+  };
+
+  const addPaydayTemplate = (template: PaydayTemplate) => {
+    addToFirestore('paydayTemplates', template);
+    syncEntriesWithTemplate(template);
+  };
+
+  const updatePaydayTemplate = (template: PaydayTemplate) => {
+    updateInFirestore('paydayTemplates', template.id, template);
+    syncEntriesWithTemplate(template);
+  };
+
+  const deletePaydayTemplate = (id: string) => {
+    const template = paydayTemplates.find(t => t.id === id);
+    if (template) {
+      deleteFromFirestore('paydayTemplates', id, paydayTemplates);
+      syncEntriesWithTemplate(template, true);
+    }
+  };
+
+  // Helper to sync entries when templates change
+  // Note: This logic is tricky with Firestore. We generate entries LOCALLY, check duplicates LOCALLY,
+  // and then push NEW entries to Firestore. We do NOT delete old manual entries automatically via DB.
+  const syncEntriesWithTemplate = (
+    template: BillTemplate | PaydayTemplate,
+    isDeleted: boolean = false
+  ) => {
+    if (isDeleted) {
+      // Remove unpaid/future entries linked to this template
+      entries
+        .filter(e => e.templateId === template.id && !(e as Bill).paid)
+        .forEach(e => deleteFromFirestore('entries', e.id, entries));
+      return;
+    }
+
+    const isBillTemplate = 'amounts' in template;
+    const newGenerated = generateEntries(
+      isBillTemplate ? [template as BillTemplate] : [],
+      !isBillTemplate ? [template as PaydayTemplate] : [],
+      new Date().getFullYear()
+    );
+
+    newGenerated.forEach(gen => {
+      const alreadyExists = entries.some(
+        e => e.templateId === template.id && e.month === gen.month && e.date === gen.date
+      );
+
+      if (!alreadyExists) {
+        addToFirestore('entries', gen);
+      }
+    });
+  };
+
+  const importData = async (data: any) => {
+    if (!user || !data) return;
+
+    // Use batch writes for performance (max 500 ops per batch)
+    const batch = writeBatch(db);
+    let count = 0;
+
+    const addToBatch = (collectionName: string, item: any) => {
+      // Generate a new ID if needed, or use existing
+      const docRef = doc(collection(db, collectionName));
+      const cleanData = sanitizeData({ ...item, userId: user.uid });
+      batch.set(docRef, cleanData); // Use set() with new docRef
+      count++;
+    };
+
+    if (Array.isArray(data.entries)) {
+      data.entries.forEach((item: any) => addToBatch('entries', item));
+    }
+    if (Array.isArray(data.accounts)) {
+      data.accounts.forEach((item: any) => addToBatch('accounts', item));
+    }
+    if (Array.isArray(data.templates)) {
+      data.templates.forEach((item: any) => addToBatch('templates', item));
+    }
+    if (Array.isArray(data.paydayTemplates)) {
+      data.paydayTemplates.forEach((item: any) => addToBatch('paydayTemplates', item));
+    }
+
+    if (count > 0) {
+      await batch.commit();
+    }
+  };
+
+  const deleteAccountData = async () => {
+    if (!user) return;
+    const batch = writeBatch(db);
+
+    // Helper to queue deletes
+    const queueDeletes = (items: any[], collectionName: string) => {
+      items.forEach(item => {
+        if (item.firebaseId) {
+          batch.delete(doc(db, collectionName, item.firebaseId));
+        }
+      });
+    };
+
+    // Queue all deletes
+    queueDeletes(entries, 'entries');
+    queueDeletes(accounts, 'accounts');
+    queueDeletes(templates, 'templates');
+    queueDeletes(paydayTemplates, 'paydayTemplates');
+
+    await batch.commit();
+  };
+
+  const setHideOldData = (hide: boolean) => {
+    setHideOldDataState(hide);
+    localStorage.setItem('hideOldData', JSON.stringify(hide));
+  };
+
+  return (
+    <DataContext.Provider
+      value={{
+        entries,
+        accounts,
+        templates,
+        paydayTemplates,
+        addEntry,
+        updateEntry,
+        deleteEntry,
+        addAccount,
+        removeAccount,
+        updateAccount,
+        reorderAccounts,
+        addTemplate,
+        updateTemplate,
+        deleteTemplate,
+        addPaydayTemplate,
+        updatePaydayTemplate,
+        deletePaydayTemplate,
+        exportData: () => ({ entries, accounts, templates, paydayTemplates }),
+        importData,
+        deleteAccountData,
+        hideOldData,
+        setHideOldData,
+        loading,
+      }}
+    >
+      {children}
+    </DataContext.Provider>
+  );
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const useData = () => {
-    const context = useContext(DataContext);
-    if (!context) throw new Error('useData must be used within a DataProvider');
-    return context;
+  const context = useContext(DataContext);
+  if (!context) throw new Error('useData must be used within a DataProvider');
+  return context;
 };

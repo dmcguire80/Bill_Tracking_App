@@ -27,19 +27,34 @@ function Dashboard() {
 
   const calculatedData = useCalculations(entries, accounts);
 
-  const visibleData = hideOldData ? calculatedData.filter(entry => {
-    // Parse "Jan '26" + date to Date object
-    const [monthName, yearShort] = entry.month.split(" '");
-    const year = 2000 + parseInt(yearShort || '26');
-    const monthIndex = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(monthName);
+  const visibleData = hideOldData
+    ? calculatedData.filter(entry => {
+        // Parse "Jan '26" + date to Date object
+        const [monthName, yearShort] = entry.month.split(" '");
+        const year = 2000 + parseInt(yearShort || '26');
+        const monthIndex = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ].indexOf(monthName);
 
-    const entryDate = new Date(year, monthIndex, entry.date);
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 56); // 8 weeks
+        const entryDate = new Date(year, monthIndex, entry.date);
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 56); // 8 weeks
 
-    // Keep future dates and recent past
-    return entryDate >= cutoff;
-  }) : calculatedData;
+        // Keep future dates and recent past
+        return entryDate >= cutoff;
+      })
+    : calculatedData;
 
   const handleScrollToToday = () => {
     const today = new Date();
@@ -47,14 +62,14 @@ function Dashboard() {
     const currentYearShort = today.getFullYear().toString().slice(-2);
     const monthStr = `${currentMonthStr} '${currentYearShort}`;
 
-    const targetEntry = calculatedData.find(e =>
-      e.month === monthStr && e.date >= today.getDate()
-    ) || calculatedData.find(e => e.month === monthStr);
+    const targetEntry =
+      calculatedData.find(e => e.month === monthStr && e.date >= today.getDate()) ||
+      calculatedData.find(e => e.month === monthStr);
 
     if (targetEntry) {
       document.getElementById(`row-${targetEntry.id}`)?.scrollIntoView({
         behavior: 'smooth',
-        block: 'center'
+        block: 'center',
       });
     }
   };
@@ -72,7 +87,7 @@ function Dashboard() {
       id: uuid(),
       type: 'bill',
       paid: false,
-      amounts: billData.amounts
+      amounts: billData.amounts,
     };
     addEntry(newBill);
   };
@@ -82,7 +97,7 @@ function Dashboard() {
       ...paydayData,
       id: uuid(),
       type: 'payday',
-      balances: paydayData.balances
+      balances: paydayData.balances,
     };
     addEntry(newPayday);
   };
@@ -193,7 +208,6 @@ function Dashboard() {
   );
 }
 
-
 // AuthProvider is now in main.tsx
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
@@ -228,50 +242,72 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Setup Route (Semi-Protected) */}
-        <Route path="/setup" element={
-          <ProtectedRoute>
-            {accounts.length > 0 ? <Navigate to="/" replace /> : <SetupWizard onComplete={handleSetupComplete} />}
-          </ProtectedRoute>
-        } />
+        <Route
+          path="/setup"
+          element={
+            <ProtectedRoute>
+              {accounts.length > 0 ? (
+                <Navigate to="/" replace />
+              ) : (
+                <SetupWizard onComplete={handleSetupComplete} />
+              )}
+            </ProtectedRoute>
+          }
+        />
 
         {/* Protected App Routes */}
-        <Route path="/" element={
-          <ProtectedRoute>
-            {accounts.length === 0 ? <Navigate to="/setup" replace /> : (
-              <Layout>
-                <Dashboard />
-              </Layout>
-            )}
-          </ProtectedRoute>
-        } />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              {accounts.length === 0 ? (
+                <Navigate to="/setup" replace />
+              ) : (
+                <Layout>
+                  <Dashboard />
+                </Layout>
+              )}
+            </ProtectedRoute>
+          }
+        />
 
-        <Route path="/analytics" element={
-          <ProtectedRoute>
-            {accounts.length === 0 ? <Navigate to="/setup" replace /> : (
-              <Layout>
-                <Analytics />
-              </Layout>
-            )}
-          </ProtectedRoute>
-        } />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              {accounts.length === 0 ? (
+                <Navigate to="/setup" replace />
+              ) : (
+                <Layout>
+                  <Analytics />
+                </Layout>
+              )}
+            </ProtectedRoute>
+          }
+        />
 
-        <Route path="/settings/*" element={
-          <ProtectedRoute>
-            {accounts.length === 0 ? <Navigate to="/setup" replace /> : (
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<Navigate to="bills" replace />} />
-                  <Route path="bills" element={<ManageBills />} />
-                  <Route path="accounts" element={<ManageAccounts />} />
-                  <Route path="paydays" element={<ManagePaydays />} />
-                  <Route path="accounts" element={<ManageAccounts />} />
-                  <Route path="data" element={<DataManagement />} />
-                  <Route path="preferences" element={<SettingsPreferences />} />
-                </Routes>
-              </Layout>
-            )}
-          </ProtectedRoute>
-        } />
+        <Route
+          path="/settings/*"
+          element={
+            <ProtectedRoute>
+              {accounts.length === 0 ? (
+                <Navigate to="/setup" replace />
+              ) : (
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={<Navigate to="bills" replace />} />
+                    <Route path="bills" element={<ManageBills />} />
+                    <Route path="accounts" element={<ManageAccounts />} />
+                    <Route path="paydays" element={<ManagePaydays />} />
+                    <Route path="accounts" element={<ManageAccounts />} />
+                    <Route path="data" element={<DataManagement />} />
+                    <Route path="preferences" element={<SettingsPreferences />} />
+                  </Routes>
+                </Layout>
+              )}
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

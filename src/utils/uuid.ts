@@ -3,19 +3,19 @@
  * Falls back to Math.random() if crypto.randomUUID() is unavailable (e.g. in insecure HTTP contexts).
  */
 export const uuid = (): string => {
-    // Try native crypto API first
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-        try {
-            return crypto.randomUUID();
-        } catch {
-            // Ignore error and fall back
-        }
+  // Try native crypto API first
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    try {
+      return crypto.randomUUID();
+    } catch {
+      // Ignore error and fall back
     }
+  }
 
-    // Fallback for insecure contexts or older browsers
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
+  // Fallback for insecure contexts or older browsers
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 };
