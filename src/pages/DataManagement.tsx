@@ -195,7 +195,6 @@ export const DataManagement = () => {
           </div>
         </div>
       </div>
-      <span className="text-xs text-slate-500 font-mono">v{import.meta.env.PACKAGE_VERSION}</span>
     </>
   );
 };
