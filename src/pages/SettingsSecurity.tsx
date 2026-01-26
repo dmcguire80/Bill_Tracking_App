@@ -8,6 +8,10 @@ export const SettingsSecurity = () => {
                 <p className="text-neutral-400">Manage your account security and authentication methods.</p>
             </div>
 
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-amber-200 text-sm">
+                These features are coming in a future update.
+            </div>
+
             <div className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-6 opacity-75">
 
                 <div className="flex items-center justify-between p-4 bg-black/20 rounded-lg border border-white/5">

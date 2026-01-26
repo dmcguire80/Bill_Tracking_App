@@ -134,7 +134,7 @@ Phase 1
 -->
 - [x] Cleanup Legacy Code (server.js, LXC)
 - [x] "Delete Account" Feature (GDPR compliance)
-- [ ] Advanced Settings (Profile management, Dark/Light mode)
+- [x] Advanced Settings (Profile, Theme, Security) - v0.9.22
 - [ ] Biometric/MFA Login Options
 - **Status:** complete
 

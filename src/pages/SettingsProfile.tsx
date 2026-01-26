@@ -6,13 +6,16 @@ export const SettingsProfile = () => {
     const { user, updateUserProfile } = useAuth();
     const [displayName, setDisplayName] = useState(user?.displayName || '');
     const [isSaving, setIsSaving] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
+        setSuccessMessage('');
         try {
             await updateUserProfile(displayName);
-            // Optional: Add a toast notification here
+            setSuccessMessage('Profile updated successfully!');
+            setTimeout(() => setSuccessMessage(''), 3000);
         } catch (error) {
             console.error('Failed to update profile', error);
             alert('Failed to update profile');
@@ -74,6 +77,12 @@ export const SettingsProfile = () => {
                         </div>
                         <p className="text-xs text-neutral-500 mt-1">Email cannot be changed securely yet.</p>
                     </div>
+
+                    {successMessage && (
+                        <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 text-sm">
+                            {successMessage}
+                        </div>
+                    )}
 
                     <div className="pt-2">
                         <button
