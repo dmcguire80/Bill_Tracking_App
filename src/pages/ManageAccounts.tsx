@@ -61,7 +61,6 @@ export const ManageAccounts = () => {
   return (
     <>
       <div className="space-y-8">
-
         <div>
           <h2 className="text-2xl font-bold text-white mb-2">Manage Accounts</h2>
           <p className="text-neutral-400">Add, rename, or reorder payment accounts/sources.</p>

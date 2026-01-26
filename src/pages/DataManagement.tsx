@@ -103,8 +103,8 @@ export const DataManagement = () => {
           </div>
 
           <p className="text-neutral-400 mb-6 text-sm">
-            Deleting your account will permanently remove all your data, including bills,
-            accounts, and history. This action cannot be undone.
+            Deleting your account will permanently remove all your data, including bills, accounts,
+            and history. This action cannot be undone.
           </p>
 
           <button
@@ -125,8 +125,8 @@ export const DataManagement = () => {
             <h3 className="text-xl font-semibold text-white">Export Data</h3>
           </div>
           <p className="text-neutral-400 mb-6">
-            Download a JSON file containing all your accounts, bills, templates, and history.
-            Keep this file safe as a backup.
+            Download a JSON file containing all your accounts, bills, templates, and history. Keep
+            this file safe as a backup.
           </p>
           <button
             onClick={handleExport}

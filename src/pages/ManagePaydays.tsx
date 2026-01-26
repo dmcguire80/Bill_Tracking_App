@@ -90,7 +90,6 @@ export const ManagePaydays = () => {
   return (
     <>
       <div className="space-y-8">
-
         <div className="flex justify-between items-end">
           <div>
             <h2 className="text-2xl font-bold text-white mb-2">Manage Payday Schedules</h2>

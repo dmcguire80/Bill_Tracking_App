@@ -32,31 +32,31 @@ function Dashboard() {
 
   const visibleData = hideOldData
     ? calculatedData.filter(entry => {
-      // Parse "Jan '26" + date to Date object
-      const [monthName, yearShort] = entry.month.split(" '");
-      const year = 2000 + parseInt(yearShort || '26');
-      const monthIndex = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ].indexOf(monthName);
+        // Parse "Jan '26" + date to Date object
+        const [monthName, yearShort] = entry.month.split(" '");
+        const year = 2000 + parseInt(yearShort || '26');
+        const monthIndex = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ].indexOf(monthName);
 
-      const entryDate = new Date(year, monthIndex, entry.date);
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - 56); // 8 weeks
+        const entryDate = new Date(year, monthIndex, entry.date);
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 56); // 8 weeks
 
-      // Keep future dates and recent past
-      return entryDate >= cutoff;
-    })
+        // Keep future dates and recent past
+        return entryDate >= cutoff;
+      })
     : calculatedData;
 
   const handleScrollToToday = () => {
@@ -293,11 +293,7 @@ function App() {
           path="/settings"
           element={
             <ProtectedRoute>
-              {accounts.length === 0 ? (
-                <Navigate to="/setup" replace />
-              ) : (
-                <SettingsLayout />
-              )}
+              {accounts.length === 0 ? <Navigate to="/setup" replace /> : <SettingsLayout />}
             </ProtectedRoute>
           }
         >
