@@ -11,7 +11,9 @@ export const Layout = ({ children }: LayoutProps) => {
           <h1 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
             Linear Budget
           </h1>
-          <span className="text-xs text-slate-500 font-mono">v{import.meta.env.PACKAGE_VERSION}</span>
+          <span className="text-xs text-slate-500 font-mono">
+            v{import.meta.env.PACKAGE_VERSION}
+          </span>
         </div>
       </header>
 
@@ -19,6 +21,6 @@ export const Layout = ({ children }: LayoutProps) => {
       <main className="p-8">
         <div className="max-w-[1600px] mx-auto">{children}</div>
       </main>
-    </div >
+    </div>
   );
 };
