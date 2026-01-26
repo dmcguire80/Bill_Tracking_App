@@ -35,9 +35,10 @@ export const SettingsLayout = () => {
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${isActive
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                    `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                      isActive
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : 'text-neutral-400 hover:text-white hover:bg-white/5'
                     }`
                   }
                 >

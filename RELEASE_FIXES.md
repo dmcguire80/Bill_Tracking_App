@@ -4,6 +4,7 @@ Use this guide to update your GitHub Releases to match the new global standards.
 
 | Tag | Current State (Log) | **NEW Standard Title** | **Notes Content** (Copy & Paste) |
 | :--- | :--- | :--- | :--- |
+| `v0.9.26` | `style: fix formatting` | `v0.9.26 - Polish: Code Formatting` | `### 🛠️ Infrastructure<br>- Fixed Prettier formatting in SettingsLayout.tsx to pass CI.` |
 | `v0.9.25` | `fix(ui): standardize settings layout` | `v0.9.25 - Fix: Settings Page Layout` | `### 🐛 Bug Fixes<br>- Fixed inconsistent margins on Settings pages.<br>- Standardized layout width to match Dashboard/Analytics.` |
 | `v0.9.24` | `fix(nav): remove redundant navs` | `v0.9.24 - Fix: Navigation & Header` | `### 🐛 Bug Fixes<br>- Removed side navigation.<br>- Restored global header consistency.` |
 | `v0.9.23` | `fix(ux): success toasts` | `v0.9.23 - Polish: UX Feedback` | `### 🛠️ Polish<br>- Added success toasts for settings changes.<br>- Improved visual feedback.` |
