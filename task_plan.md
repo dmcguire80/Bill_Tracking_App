@@ -136,9 +136,19 @@ Phase 1
 - [x] "Delete Account" Feature (GDPR compliance)
 - [ ] Advanced Settings (Profile management, Dark/Light mode)
 - [ ] Biometric/MFA Login Options
-- **Status:** in_progress
+- **Status:** complete
 
-### Phase 11: Future / Deferred
+### Phase 11: Standardization & Cleanup (Post-Release)
+<!--
+  WHAT: Enforce standards and clean up technical debt.
+-->
+- [x] Define Global GitHub Standards (Releases, Titles, Notes)
+- [x] Create RELEASE_FIXES guide for retroactive updates
+- [x] Remove legacy backend dependencies (Express, CORS)
+- [x] Update DEPLOYMENT_GUIDE with Nginx architecture lessons
+- **Status:** complete
+
+### Phase 12: Future / Deferred
 - [ ] Setup Stripe Integration (Firebase Extension)
 
 ## Key Questions

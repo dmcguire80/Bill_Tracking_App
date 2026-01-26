@@ -70,4 +70,10 @@ sudo ./svc.sh start
     location / {
         try_files $uri $uri/ /index.html;
     }
+
+    # API Proxy (Optional - Only if running a backend)
+    # location /api {
+    #     proxy_pass http://localhost:3000;
+    #     ...
+    # }
     ```

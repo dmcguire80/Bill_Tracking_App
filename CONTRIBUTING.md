@@ -23,37 +23,26 @@ npm run build
 ```
 This generates the `dist/` folder served by Nginx/Express.
 
-## Release Process
+## Release Process & Standards
 
-We enforce a strict standard for release notes. All releases **must** act as a snapshot of the `CHANGELOG.md`.
+> **⚠️ NON-NEGOTIABLE**: strictly follow the **[Global GitHub Standards](.agent/standards/GITHUB_STANDARDS.md)**.
 
-### 1. Update Changelog
-Before tagging a release, you **must** add an entry to `CHANGELOG.md` following this exact format:
+### Summary of Standards
+1.  **Tag Format**: Always use `vX.Y.Z` (e.g., `v0.9.15`).
+2.  **Titles**: Must use `v{Version} - {Category}: {Summary}` format (e.g., `v0.9.16 - Polish: Move App Version to Header`).
+3.  **Notes**: Must use the standard template with bullet points for "What's New", "Bug Fixes", etc.
 
-```markdown
-## vX.X.X - <Core Change Summary>
-### <Type> (e.g., Fixed, Added, Changed)
-- **<Component>**: <Description of change>
-```
+Refer to `.agent/standards/GITHUB_STANDARDS.md` for the full template and rules.
 
-**Example:**
-```markdown
-## v0.8.4 - Performance Patch
-### Fixed
-- **Optimized Import**: Switched Data Migration tool...
-```
-
-### 2. Tag & Push
-When you push the tag, the CI workflow will automatically read the `CHANGELOG.md` entry for that version and use it to populate the Release Title and Body.
-
-1.  **Bump Version**: Update `package.json` version.
-2.  **Update Navigation**: Update displayed version in `src/pages/DataManagement.tsx`.
-3.  **Commit, Tag & Push**:
+### Workflow
+1.  **Bump Version**: Update `package.json`.
+2.  **Commit & Tag**:
     ```bash
     git commit -am "chore: release vX.X.X"
     git tag vX.X.X
     git push origin main --tags
     ```
+3.  **Create Release**: Use the GitHub UI or CLI to draft the release using the standard template.
 
 ## Code Style
 - Use **TypeScript** for all new logic.
