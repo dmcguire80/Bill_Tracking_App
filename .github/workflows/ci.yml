@@ -49,13 +49,7 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
       
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v4
-        if: always()
-        with:
-          files: ./coverage/coverage-final.json
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   e2e:
     name: E2E Tests
