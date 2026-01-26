@@ -188,7 +188,7 @@ export const DataManagement = () => {
                 </div >
             </div >
             <div className="text-center mt-12 mb-8">
-                <span className="text-xs text-slate-500 font-mono">v0.9.11</span>
+                <span className="text-xs text-slate-500 font-mono">v0.9.12</span>
             </div>
         </>
     );

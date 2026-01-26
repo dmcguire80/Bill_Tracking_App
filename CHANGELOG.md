@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.9.12 - Deployment Fix
+### Fixed
+- **CI**: Update script now fails correctly if Nginx root is missing (debugging stale deployments).
+
 ## v0.9.11 - Catch-up Trigger
 ### Changed
 - **Trigger**: Release to force-update servers that missed previous tag events.
