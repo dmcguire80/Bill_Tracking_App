@@ -1,0 +1,80 @@
+name: Auto-Fix Issues
+
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  auto-fix:
+    # Only run if issue has 'bug' or 'auto-fix' label
+    if: contains(github.event.issue.labels.*.name, 'bug') || contains(github.event.issue.labels.*.name, 'auto-fix')
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Analyze issue
+        id: analyze
+        run: |
+          ISSUE_TITLE="${{ github.event.issue.title }}"
+          ISSUE_BODY="${{ github.event.issue.body }}"
+          
+          # Check for common fixable issues
+          if [[ "$ISSUE_TITLE" == *"formatting"* ]] || [[ "$ISSUE_TITLE" == *"lint"* ]]; then
+            echo "fix_type=formatting" >> $GITHUB_OUTPUT
+          elif [[ "$ISSUE_TITLE" == *"type"* ]] || [[ "$ISSUE_TITLE" == *"TypeScript"* ]]; then
+            echo "fix_type=types" >> $GITHUB_OUTPUT
+          else
+            echo "fix_type=none" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Auto-fix formatting issues
+        if: steps.analyze.outputs.fix_type == 'formatting'
+        run: |
+          npm run format
+          npm run lint:fix
+      
+      - name: Create Pull Request
+        if: steps.analyze.outputs.fix_type != 'none'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'fix: auto-fix for issue #${{ github.event.issue.number }}'
+          branch: auto-fix/issue-${{ github.event.issue.number }}
+          title: 'Auto-fix: ${{ github.event.issue.title }}'
+          body: |
+            Automated fix for issue #${{ github.event.issue.number }}
+            
+            ## Changes
+            - Applied automated formatting
+            - Fixed linting issues
+            
+            Closes #${{ github.event.issue.number }}
+          labels: auto-fix
+      
+      - name: Comment on issue
+        if: steps.analyze.outputs.fix_type != 'none'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🤖 I\'ve created a pull request with an automated fix! Please review and merge if it looks good.'
+            })

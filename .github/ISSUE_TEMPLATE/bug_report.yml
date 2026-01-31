@@ -1,0 +1,60 @@
+name: Bug Report
+description: Report a bug that can potentially be auto-fixed
+title: "[Bug]: "
+labels: ["bug", "auto-fix"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! If this is a common issue (formatting, linting, types), our bot will attempt to auto-fix it.
+  
+  - type: dropdown
+    id: bug-type
+    attributes:
+      label: Bug Type
+      description: What type of bug is this?
+      options:
+        - Formatting/Linting
+        - TypeScript Errors
+        - Runtime Error
+        - UI Bug
+        - Performance Issue
+        - Other
+    validations:
+      required: true
+  
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the bug
+      placeholder: What happened?
+    validations:
+      required: true
+  
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this?
+      placeholder: |
+        1. Go to...
+        2. Click on...
+        3. See error
+    validations:
+      required: true
+  
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should happen?
+    validations:
+      required: true
+  
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: Paste any error messages or logs
+      render: shell
