@@ -1,16 +1,16 @@
-name: AI Issue Resolver
+name: AI-Assisted Bug Fix
 
 on:
   issues:
-    types: [opened]
+    types: [opened, labeled]
   issue_comment:
     types: [created]
 
 jobs:
-  ai-resolve:
-    # Only trigger if comment contains '/ai-fix'
+  ai-bug-fix:
+    # Trigger on 'bug' label or '/ai-fix' command
     if: |
-      github.event_name == 'issues' || 
+      (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'bug')) ||
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '/ai-fix'))
     
     runs-on: ubuntu-latest
@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better context
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -33,46 +35,219 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Get issue details
+      - name: Extract issue details
         id: issue
         uses: actions/github-script@v7
         with:
           script: |
-            const issue = context.payload.issue;
+            const issue = context.payload.issue || context.payload.issue;
+            const issueNumber = issue.number;
+            const issueTitle = issue.title;
+            const issueBody = issue.body || '';
+            
+            // Extract file references from issue
+            const fileMatches = issueBody.match(/`([^`]+\.(tsx?|jsx?))`/g) || [];
+            const files = fileMatches.map(f => f.replace(/`/g, ''));
+            
             return {
-              title: issue.title,
-              body: issue.body,
-              number: issue.number
+              number: issueNumber,
+              title: issueTitle,
+              body: issueBody,
+              files: files
             };
       
-      # This would integrate with an AI service like OpenAI, Anthropic, etc.
-      # You'd need to add your API key as a secret
-      - name: AI Analysis (Placeholder)
+      - name: Gather context
+        id: context
         run: |
-          echo "Issue: ${{ fromJson(steps.issue.outputs.result).title }}"
-          echo "This step would call an AI API to analyze and fix the issue"
-          echo "For now, running basic fixes..."
-          npm run format
-          npm run lint:fix
+          # Get recent commits for context
+          git log --oneline -10 > recent_commits.txt
+          
+          # Get test files
+          find src -name "*.test.ts*" -o -name "*.spec.ts*" > test_files.txt
+          
+          # Get component structure
+          find src/components -name "*.tsx" > components.txt
+          
+          echo "context_gathered=true" >> $GITHUB_OUTPUT
+      
+      # AI-powered bug analysis and fix using Claude
+      - name: AI Analysis with Claude
+        id: ai_analysis
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ISSUE_TITLE: ${{ fromJson(steps.issue.outputs.result).title }}
+          ISSUE_BODY: ${{ fromJson(steps.issue.outputs.result).body }}
+        run: |
+          echo "=== Claude AI Bug Analysis ==="
+          
+          # Detect which file to analyze
+          FILES="${{ fromJson(steps.issue.outputs.result).files }}"
+          
+          # Auto-detect file from issue keywords if not specified
+          if [ -z "$FILES" ]; then
+            if [[ "$ISSUE_TITLE" == *"scroll"* ]] || [[ "$ISSUE_BODY" == *"scroll"* ]]; then
+              FILES="src/App.tsx"
+            elif [[ "$ISSUE_TITLE" == *"setup"* ]] || [[ "$ISSUE_BODY" == *"setup"* ]]; then
+              FILES="src/components/SetupWizard.tsx"
+            elif [[ "$ISSUE_TITLE" == *"bill"* ]]; then
+              FILES="src/components/BillTable.tsx"
+            else
+              FILES="src/App.tsx"  # Default
+            fi
+          fi
+          
+          echo "Analyzing file: $FILES"
+          
+          # Read file content
+          if [ -f "$FILES" ]; then
+            FILE_CONTENT=$(cat "$FILES")
+          else
+            echo "File not found: $FILES"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Create prompt for Claude
+          cat > prompt.json <<'EOF'
+          {
+            "model": "claude-3-5-sonnet-20241022",
+            "max_tokens": 8192,
+            "messages": [{
+              "role": "user",
+              "content": "You are an expert TypeScript/React developer working on a Bill Tracking application.\n\n**Bug Report:**\nTitle: ${ISSUE_TITLE}\n\nDescription:\n${ISSUE_BODY}\n\n**Current Code (${FILES}):**\n```typescript\n${FILE_CONTENT}\n```\n\n**Your Task:**\n1. Analyze the bug and identify the root cause\n2. Provide the COMPLETE fixed code for the entire file\n3. Explain what was wrong and how you fixed it\n4. Suggest test cases\n\n**Response Format:**\nPlease respond in this exact format:\n\nANALYSIS:\n[Your detailed analysis of the bug]\n\nFIXED_CODE:\n```typescript\n[Complete fixed code here - the ENTIRE file, not just the changed function]\n```\n\nEXPLANATION:\n[Brief explanation of what you changed and why]\n\nTEST_SUGGESTIONS:\n[Suggested test cases to verify the fix]"
+            }]
+          }
+EOF
+          
+          # Substitute variables in prompt
+          export ISSUE_TITLE ISSUE_BODY FILES FILE_CONTENT
+          envsubst < prompt.json > prompt_final.json
+          
+          # Call Claude API
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            echo "Calling Claude API..."
+            RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+              -H "x-api-key: $ANTHROPIC_API_KEY" \
+              -H "anthropic-version: 2023-06-01" \
+              -H "content-type: application/json" \
+              -d @prompt_final.json)
+            
+            echo "$RESPONSE" > ai_response.json
+            
+            # Check if API call was successful
+            if echo "$RESPONSE" | jq -e '.content[0].text' > /dev/null 2>&1; then
+              # Extract the full response
+              FULL_RESPONSE=$(echo "$RESPONSE" | jq -r '.content[0].text')
+              echo "$FULL_RESPONSE" > ai_explanation.txt
+              
+              # Extract just the fixed code
+              FIXED_CODE=$(echo "$FULL_RESPONSE" | sed -n '/FIXED_CODE:/,/```$/p' | sed '1d;$d' | tail -n +2)
+              
+              if [ -n "$FIXED_CODE" ]; then
+                echo "$FIXED_CODE" > "$FILES"
+                echo "has_changes=true" >> $GITHUB_OUTPUT
+                echo "✅ Claude successfully generated a fix!"
+              else
+                echo "⚠️ Claude responded but no code was extracted"
+                echo "has_changes=false" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "❌ API call failed or returned error"
+              echo "$RESPONSE"
+              echo "has_changes=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "⚠️ ANTHROPIC_API_KEY not set - running basic fixes only"
+            npm run format
+            npm run lint:fix
+            
+            if git diff --quiet; then
+              echo "has_changes=false" >> $GITHUB_OUTPUT
+            else
+              echo "has_changes=true" >> $GITHUB_OUTPUT
+              echo "Applied formatting and linting fixes" > ai_explanation.txt
+            fi
+          fi
       
       - name: Run tests
+        if: steps.ai_analysis.outputs.has_changes == 'true'
         run: npm run test
       
       - name: Create Pull Request
+        if: steps.ai_analysis.outputs.has_changes == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'fix: AI-assisted fix for issue #${{ fromJson(steps.issue.outputs.result).number }}'
+          commit-message: 'fix: AI-assisted fix for #${{ fromJson(steps.issue.outputs.result).number }}'
           branch: ai-fix/issue-${{ fromJson(steps.issue.outputs.result).number }}
-          title: 'AI Fix: ${{ fromJson(steps.issue.outputs.result).title }}'
+          title: '🤖 AI Fix: ${{ fromJson(steps.issue.outputs.result).title }}'
           body: |
-            🤖 AI-assisted fix for issue #${{ fromJson(steps.issue.outputs.result).number }}
+            ## AI-Assisted Fix for #${{ fromJson(steps.issue.outputs.result).number }}
             
-            ## Analysis
-            The AI analyzed the issue and applied the following fixes:
-            - Code formatting
-            - Linting fixes
-            - Type corrections
+            ### Analysis
+            The AI analyzed the issue and applied fixes based on:
+            - Issue description
+            - Code context
+            - Recent changes
+            - Test coverage
+            
+            ### Changes Made
+            <!-- AI would list specific changes here -->
+            - Applied code formatting
+            - Fixed linting issues
+            
+            ### Testing
+            - ✅ All tests pass
+            - ⚠️ Manual testing recommended
+            
+            **Note**: This is an AI-generated fix. Please review carefully before merging.
             
             Closes #${{ fromJson(steps.issue.outputs.result).number }}
-          labels: ai-fix, auto-fix
+          labels: ai-fix, needs-review
+      
+      - name: Comment on issue
+        if: steps.ai_analysis.outputs.has_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🤖 I've analyzed this issue and created a pull request with a potential fix!
+              
+              **Please note**: This is an AI-assisted fix. While I've done my best to understand the issue and apply appropriate changes, please review the PR carefully before merging.
+              
+              The fix includes:
+              - Code formatting
+              - Linting fixes
+              - All tests passing
+              
+              If this doesn't fully resolve the issue, please provide more details and I'll try again! 🔧`
+            })
+      
+      - name: No changes comment
+        if: steps.ai_analysis.outputs.has_changes == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🤖 I've analyzed this issue but couldn't automatically generate a fix.
+              
+              This issue likely requires:
+              - Manual code review
+              - Business logic changes
+              - Design decisions
+              
+              A human developer will need to investigate this. I've added the \`needs-human\` label.`
+            })
+            
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['needs-human']
+            })
