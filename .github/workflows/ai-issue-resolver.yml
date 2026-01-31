@@ -98,7 +98,7 @@ jobs:
           
           echo "Analyzing file: $FILES"
           
-          # Read file content
+          # Read file content (properly)
           if [ -f "$FILES" ]; then
             FILE_CONTENT=$(cat "$FILES")
           else
@@ -107,21 +107,22 @@ jobs:
             exit 0
           fi
           
-          # Create prompt for Claude
-          cat > prompt.json <<'EOF'
-          {
-            "model": "claude-3-5-sonnet-20241022",
-            "max_tokens": 8192,
-            "messages": [{
-              "role": "user",
-              "content": "You are an expert TypeScript/React developer working on a Bill Tracking application.\n\n**Bug Report:**\nTitle: ${ISSUE_TITLE}\n\nDescription:\n${ISSUE_BODY}\n\n**Current Code (${FILES}):**\n```typescript\n${FILE_CONTENT}\n```\n\n**Your Task:**\n1. Analyze the bug and identify the root cause\n2. Provide the COMPLETE fixed code for the entire file\n3. Explain what was wrong and how you fixed it\n4. Suggest test cases\n\n**Response Format:**\nPlease respond in this exact format:\n\nANALYSIS:\n[Your detailed analysis of the bug]\n\nFIXED_CODE:\n```typescript\n[Complete fixed code here - the ENTIRE file, not just the changed function]\n```\n\nEXPLANATION:\n[Brief explanation of what you changed and why]\n\nTEST_SUGGESTIONS:\n[Suggested test cases to verify the fix]"
-            }]
-          }
-EOF
-          
-          # Substitute variables in prompt
-          export ISSUE_TITLE ISSUE_BODY FILES FILE_CONTENT
-          envsubst < prompt.json > prompt_final.json
+          # Create prompt for Claude (using jq to properly escape JSON)
+          jq -n \
+            --arg model "claude-3-5-sonnet-20241022" \
+            --argjson max_tokens 8192 \
+            --arg title "$ISSUE_TITLE" \
+            --arg body "$ISSUE_BODY" \
+            --arg file "$FILES" \
+            --arg content "$FILE_CONTENT" \
+            '{
+              model: $model,
+              max_tokens: $max_tokens,
+              messages: [{
+                role: "user",
+                content: "You are an expert TypeScript/React developer working on a Bill Tracking application.\n\n**Bug Report:**\nTitle: \($title)\n\nDescription:\n\($body)\n\n**Current Code (\($file)):**\n```typescript\n\($content)\n```\n\n**Your Task:**\n1. Analyze the bug and identify the root cause\n2. Provide the COMPLETE fixed code for the entire file\n3. Explain what was wrong and how you fixed it\n4. Suggest test cases\n\n**Response Format:**\nPlease respond in this exact format:\n\nANALYSIS:\n[Your detailed analysis of the bug]\n\nFIXED_CODE:\n```typescript\n[Complete fixed code here - the ENTIRE file, not just the changed function]\n```\n\nEXPLANATION:\n[Brief explanation of what you changed and why]\n\nTEST_SUGGESTIONS:\n[Suggested test cases to verify the fix]"
+              }]
+            }' > prompt.json
           
           # Call Claude API
           if [ -n "$ANTHROPIC_API_KEY" ]; then
@@ -130,7 +131,7 @@ EOF
               -H "x-api-key: $ANTHROPIC_API_KEY" \
               -H "anthropic-version: 2023-06-01" \
               -H "content-type: application/json" \
-              -d @prompt_final.json)
+              -d @prompt.json)
             
             echo "$RESPONSE" > ai_response.json
             
@@ -140,8 +141,8 @@ EOF
               FULL_RESPONSE=$(echo "$RESPONSE" | jq -r '.content[0].text')
               echo "$FULL_RESPONSE" > ai_explanation.txt
               
-              # Extract just the fixed code
-              FIXED_CODE=$(echo "$FULL_RESPONSE" | sed -n '/FIXED_CODE:/,/```$/p' | sed '1d;$d' | tail -n +2)
+              # Extract just the fixed code between FIXED_CODE: and the closing ```
+              FIXED_CODE=$(echo "$FULL_RESPONSE" | awk '/FIXED_CODE:/,/^```$/ {if (!/FIXED_CODE:/ && !/^```typescript$/ && !/^```$/) print}')
               
               if [ -n "$FIXED_CODE" ]; then
                 echo "$FIXED_CODE" > "$FILES"
