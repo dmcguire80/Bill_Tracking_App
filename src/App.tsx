@@ -9,7 +9,7 @@ import { SetupWizard } from './components/SetupWizard';
 import { useCalculations } from './hooks/useCalculations';
 import { useData } from './context/DataContext';
 import type { Bill, Payday, Entry } from './types';
-import { Plus, Calendar } from 'lucide-react';
+import { Plus, Calendar, Eye, EyeOff } from 'lucide-react';
 import { uuid } from './utils/uuid';
 
 import { ManageBills } from './pages/ManageBills';
@@ -23,7 +23,16 @@ import { SettingsSecurity } from './pages/SettingsSecurity';
 import { Analytics } from './pages/Analytics';
 
 function Dashboard() {
-  const { entries, accounts, addEntry, updateEntry, deleteEntry, hideOldData } = useData();
+  const {
+    entries,
+    accounts,
+    addEntry,
+    updateEntry,
+    deleteEntry,
+    hideOldData,
+    hidePaid,
+    setHidePaid,
+  } = useData();
   const [isBillFormOpen, setIsBillFormOpen] = useState(false);
   const [isPaydayFormOpen, setIsPaydayFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -59,18 +68,45 @@ function Dashboard() {
       })
     : calculatedData;
 
+  // Apply hidePaid filter
+  const finalVisibleData = hidePaid
+    ? visibleData.filter(entry => entry.type === 'payday' || !(entry as Bill).paid)
+    : visibleData;
+
   const handleScrollToToday = () => {
     const today = new Date();
-    const currentMonthStr = today.toLocaleString('default', { month: 'short' });
-    const currentYearShort = today.getFullYear().toString().slice(-2);
-    const monthStr = `${currentMonthStr} '${currentYearShort}`;
+    today.setHours(0, 0, 0, 0); // Normalize to start of day
 
-    const targetEntry =
-      calculatedData.find(e => e.month === monthStr && e.date >= today.getDate()) ||
-      calculatedData.find(e => e.month === monthStr);
+    // Convert entries to dates for comparison
+    const entriesWithDates = finalVisibleData.map(entry => {
+      const [monthName, yearShort] = entry.month.split(" '");
+      const year = 2000 + parseInt(yearShort || '26');
+      const monthIndex = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ].indexOf(monthName);
 
-    if (targetEntry) {
-      document.getElementById(`row-${targetEntry.id}`)?.scrollIntoView({
+      const entryDate = new Date(year, monthIndex, entry.date);
+      entryDate.setHours(0, 0, 0, 0);
+
+      return { entry, date: entryDate };
+    });
+
+    // Find entry with today's date or the next closest future date
+    const targetEntryData = entriesWithDates.find(({ date }) => date >= today);
+
+    if (targetEntryData) {
+      document.getElementById(`row-${targetEntryData.entry.id}`)?.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
       });
@@ -165,6 +201,17 @@ function Dashboard() {
           >
             <Calendar size={20} />
           </button>
+          <button
+            onClick={() => setHidePaid(!hidePaid)}
+            className={`border px-3 py-2 rounded-lg font-medium transition-colors h-10 w-10 flex items-center justify-center shrink-0 ${
+              hidePaid
+                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30'
+                : 'bg-white/5 hover:bg-white/10 text-neutral-300 border-white/10'
+            }`}
+            title={hidePaid ? 'Show Paid Bills' : 'Hide Paid Bills'}
+          >
+            {hidePaid ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
           <div className="w-px h-8 bg-white/10 mx-1 hidden sm:block"></div>
           <button
             onClick={() => setIsPaydayFormOpen(true)}
@@ -186,7 +233,7 @@ function Dashboard() {
       </header>
 
       <BillTable
-        data={visibleData}
+        data={finalVisibleData}
         onTogglePaid={handleTogglePaid}
         onEdit={openEdit}
         onDelete={handleDelete}

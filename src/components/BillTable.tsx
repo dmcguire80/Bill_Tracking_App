@@ -1,8 +1,10 @@
+import { useState, useRef } from 'react';
 import { useData } from '../context/DataContext';
 import type { Bill, Entry } from '../types';
 import { formatCurrency } from '../utils/format';
 import { Check, Circle, Edit2, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
+import { Popover } from './Popover';
 
 interface BillTableProps {
   data: Entry[];
@@ -62,6 +64,23 @@ const Row = ({
 }) => {
   const { accounts } = useData();
   const isPayday = entry.type === 'payday';
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const nameRef = useRef<HTMLSpanElement>(null);
+
+  const handleNameClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsPopoverOpen(true);
+  };
+
+  const handleEdit = () => {
+    setIsPopoverOpen(false);
+    onEdit(entry);
+  };
+
+  const handleDelete = () => {
+    setIsPopoverOpen(false);
+    onDelete(entry.id);
+  };
 
   if (isPayday) {
     return (
@@ -75,24 +94,32 @@ const Row = ({
         <td className="px-3 py-3 sticky left-12 z-20 bg-[#0f1d18] border-r border-emerald-500/20 text-emerald-400 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">
           {entry.date}
         </td>
-        <td className="px-4 py-3 text-base md:text-lg text-emerald-300 uppercase tracking-wide truncate max-w-[140px] md:max-w-none">
-          <div className="flex items-center justify-between">
-            <span>{entry.name}</span>
-            <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+        <td className="px-4 py-3 text-base md:text-lg text-emerald-300 uppercase tracking-wide">
+          <span
+            ref={nameRef}
+            onClick={handleNameClick}
+            className="cursor-pointer hover:text-emerald-200 transition-colors"
+          >
+            {entry.name}
+          </span>
+          <Popover isOpen={isPopoverOpen} onClose={() => setIsPopoverOpen(false)}>
+            <div className="flex flex-col gap-1">
               <button
-                onClick={() => onEdit(entry)}
-                className="p-1 hover:bg-white/10 rounded text-neutral-400 hover:text-white"
+                onClick={handleEdit}
+                className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 rounded text-neutral-300 hover:text-white transition-colors text-left"
               >
-                <Edit2 size={14} />
+                <Edit2 size={16} />
+                <span>Edit</span>
               </button>
               <button
-                onClick={() => onDelete(entry.id)}
-                className="p-1 hover:bg-red-500/20 rounded text-neutral-400 hover:text-red-400"
+                onClick={handleDelete}
+                className="flex items-center gap-2 px-3 py-2 hover:bg-red-500/20 rounded text-neutral-300 hover:text-red-400 transition-colors text-left"
               >
-                <Trash2 size={14} />
+                <Trash2 size={16} />
+                <span>Delete</span>
               </button>
             </div>
-          </div>
+          </Popover>
         </td>
         <td className="px-2 py-3 text-center text-emerald-500/50">-</td>
         {accounts.map(account => {
@@ -132,24 +159,32 @@ const Row = ({
       <td className="px-3 py-3 sticky left-12 z-10 bg-[#0f172a] border-r border-white/10 font-mono text-neutral-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">
         {entry.date}
       </td>
-      <td className="px-4 py-3 font-medium text-white truncate max-w-[140px] md:max-w-none">
-        <div className="flex items-center justify-between">
-          <span className="truncate">{entry.name}</span>
-          <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+      <td className="px-4 py-3 font-medium text-white">
+        <span
+          ref={nameRef}
+          onClick={handleNameClick}
+          className="cursor-pointer hover:text-emerald-400 transition-colors"
+        >
+          {entry.name}
+        </span>
+        <Popover isOpen={isPopoverOpen} onClose={() => setIsPopoverOpen(false)}>
+          <div className="flex flex-col gap-1">
             <button
-              onClick={() => onEdit(entry)}
-              className="p-1 hover:bg-white/10 rounded text-neutral-400 hover:text-white"
+              onClick={handleEdit}
+              className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 rounded text-neutral-300 hover:text-white transition-colors text-left"
             >
-              <Edit2 size={14} />
+              <Edit2 size={16} />
+              <span>Edit</span>
             </button>
             <button
-              onClick={() => onDelete(entry.id)}
-              className="p-1 hover:bg-red-500/20 rounded text-neutral-400 hover:text-red-400"
+              onClick={handleDelete}
+              className="flex items-center gap-2 px-3 py-2 hover:bg-red-500/20 rounded text-neutral-300 hover:text-red-400 transition-colors text-left"
             >
-              <Trash2 size={14} />
+              <Trash2 size={16} />
+              <span>Delete</span>
             </button>
           </div>
-        </div>
+        </Popover>
       </td>
       <td className="px-2 py-3 text-center">
         <button

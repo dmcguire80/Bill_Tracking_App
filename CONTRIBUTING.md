@@ -49,3 +49,35 @@ Refer to `.agent/standards/GITHUB_STANDARDS.md` for the full template and rules.
 - Use **TailwindCSS** for styling.
 - Keep components small and focused.
 - Use `DataContext` for global state.
+
+## Pre-Push Checklist
+
+**CRITICAL**: Run these commands before every commit to prevent CI failures:
+
+```bash
+# 1. Format all code
+npm run format
+
+# 2. Fix auto-fixable linting issues
+npm run lint:fix
+
+# 3. Verify type safety
+npm run type-check
+
+# 4. Run tests
+npm run test
+```
+
+### Why This Matters
+- The CI pipeline runs `npm run format:check` and will **fail** if code is not formatted
+- Running `npm run format` locally ensures your code passes CI checks
+- This saves time and keeps the commit history clean
+
+### Quick Command Reference
+| Command | Purpose |
+|---------|---------|
+| `npm run format` | Auto-format all code with Prettier |
+| `npm run format:check` | Check if code is formatted (CI uses this) |
+| `npm run lint` | Check for linting errors |
+| `npm run lint:fix` | Auto-fix linting issues |
+| `npm run type-check` | Verify TypeScript types |

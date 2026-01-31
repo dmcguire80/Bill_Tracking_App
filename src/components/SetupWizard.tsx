@@ -37,6 +37,7 @@ export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
 
   // Bill Form Defaults
   const [billName, setBillName] = useState('');
+  const [billRecurrence, setBillRecurrence] = useState<RecurrenceType>('monthly');
   const [billAmount, setBillAmount] = useState('');
   const [billDay, setBillDay] = useState(1);
   const [billAccountId, setBillAccountId] = useState('');
@@ -96,12 +97,15 @@ export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
   const handleAddBill = () => {
     if (!billName || !billAmount || !billAccountId) return;
 
+    const account = accounts.find(a => a.id === billAccountId);
+    if (!account) return;
+
     const template: BillTemplate = {
       id: uuid(),
       name: billName,
-      recurrence: 'monthly',
+      recurrence: billRecurrence,
       day: billDay,
-      amounts: { [billAccountId]: parseFloat(billAmount) },
+      amounts: { [account.name]: parseFloat(billAmount) }, // Use account NAME not ID
       autoGenerate: true,
       isActive: true,
     };
@@ -110,7 +114,7 @@ export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
     // Reset form
     setBillName('');
     setBillAmount('');
-    // Keep account and day as they are likely similar for next bill
+    // Keep account, day, and recurrence as they are likely similar for next bill
   };
 
   const handleRemoveBill = (id: string) => {
@@ -422,7 +426,7 @@ export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
 
                 <div className="bg-white/5 p-6 rounded-xl">
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-4">
-                    <div className="md:col-span-4">
+                    <div className="md:col-span-3">
                       <input
                         type="text"
                         placeholder="Bill Name"
@@ -431,7 +435,7 @@ export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
                         className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
                       />
                     </div>
-                    <div className="md:col-span-3">
+                    <div className="md:col-span-2">
                       <input
                         type="number"
                         placeholder="Amount"
@@ -452,6 +456,19 @@ export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
                             {a.name}
                           </option>
                         ))}
+                      </select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <select
+                        value={billRecurrence}
+                        onChange={e => setBillRecurrence(e.target.value as RecurrenceType)}
+                        className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                      >
+                        <option value="weekly">Weekly</option>
+                        <option value="bi-weekly">Bi-Weekly</option>
+                        <option value="semi-monthly">Semi-Monthly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
                       </select>
                     </div>
                     <div className="md:col-span-2">
@@ -476,9 +493,9 @@ export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
 
                   <div className="space-y-2 max-h-[250px] overflow-y-auto">
                     {billTemplates.map(bill => {
-                      const accountName =
-                        accounts.find(a => bill.amounts[a.id] !== undefined)?.name || 'Unknown';
-                      const amount = Object.values(bill.amounts)[0];
+                      // Find account by name (since amounts are keyed by account name)
+                      const accountName = Object.keys(bill.amounts)[0];
+                      const amount = bill.amounts[accountName];
                       return (
                         <div
                           key={bill.id}
@@ -489,7 +506,7 @@ export const SetupWizard = ({ onComplete }: SetupWizardProps) => {
                             <div>
                               <div className="text-white font-medium">{bill.name}</div>
                               <div className="text-xs text-neutral-400">
-                                ${amount} • {accountName} • Day {bill.day}
+                                ${amount} • {accountName} • {bill.recurrence} • Day {bill.day}
                               </div>
                             </div>
                           </div>

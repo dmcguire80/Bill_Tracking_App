@@ -42,6 +42,8 @@ interface DataContextType {
   deleteAccountData: () => Promise<void>;
   hideOldData: boolean;
   setHideOldData: (hide: boolean) => void;
+  hidePaid: boolean;
+  setHidePaid: (hide: boolean) => void;
   loading: boolean;
 }
 
@@ -58,6 +60,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [hideOldData, setHideOldDataState] = useState(() => {
     const saved = localStorage.getItem('hideOldData');
     return saved ? JSON.parse(saved) : true; // Default to true
+  });
+  const [hidePaid, setHidePaidState] = useState(() => {
+    const saved = localStorage.getItem('hidePaid');
+    return saved ? JSON.parse(saved) : false; // Default to false
   });
   const [loading, setLoading] = useState(true);
 
@@ -308,6 +314,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('hideOldData', JSON.stringify(hide));
   };
 
+  const setHidePaid = (hide: boolean) => {
+    setHidePaidState(hide);
+    localStorage.setItem('hidePaid', JSON.stringify(hide));
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -333,6 +344,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         deleteAccountData,
         hideOldData,
         setHideOldData,
+        hidePaid,
+        setHidePaid,
         loading,
       }}
     >
