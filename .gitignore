@@ -46,3 +46,18 @@ Thumbs.db
 
 # Screenshots (keep in repo for documentation)
 !screenshots/
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Agent configurations (KEEP PRIVATE - contains custom agents and skills)
+.agent/
+
+# GitHub workflows (KEEP PRIVATE - contains deployment secrets and logic)
+.github/workflows/
+
+# Gemini/Antigravity artifacts (KEEP PRIVATE)
+.gemini/
