@@ -41,36 +41,72 @@ function Dashboard() {
 
   const visibleData = hideOldData
     ? calculatedData.filter(entry => {
-        // Parse "Jan '26" + date to Date object
-        const [monthName, yearShort] = entry.month.split(" '");
-        const year = 2000 + parseInt(yearShort || '26');
-        const monthIndex = [
-          'Jan',
-          'Feb',
-          'Mar',
-          'Apr',
-          'May',
-          'Jun',
-          'Jul',
-          'Aug',
-          'Sep',
-          'Oct',
-          'Nov',
-          'Dec',
-        ].indexOf(monthName);
+      // Parse "Jan '26" + date to Date object
+      const [monthName, yearShort] = entry.month.split(" '");
+      const year = 2000 + parseInt(yearShort || '26');
+      const monthIndex = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ].indexOf(monthName);
 
-        const entryDate = new Date(year, monthIndex, entry.date);
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - 56); // 8 weeks
+      const entryDate = new Date(year, monthIndex, entry.date);
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 56); // 8 weeks
 
-        // Keep future dates and recent past
-        return entryDate >= cutoff;
-      })
+      // Keep future dates and recent past
+      return entryDate >= cutoff;
+    })
     : calculatedData;
 
-  // Apply hidePaid filter
+  // Apply hidePaid filter - also hide payday lines if all bills under it are paid
   const finalVisibleData = hidePaid
-    ? visibleData.filter(entry => entry.type === 'payday' || !(entry as Bill).paid)
+    ? (() => {
+      // First, filter out paid bills
+      const unpaidBillsAndPaydays = visibleData.filter(
+        entry => entry.type === 'payday' || !(entry as Bill).paid
+      );
+
+      // Now determine which paydays to hide (those with no remaining bills after them)
+      // A payday should be hidden if all bills between it and the next payday are paid
+      const result: Entry[] = [];
+
+      for (let i = 0; i < unpaidBillsAndPaydays.length; i++) {
+        const current = unpaidBillsAndPaydays[i];
+
+        if (current.type === 'payday') {
+          // Check if there are any unpaid bills after this payday (before the next payday)
+          let hasUnpaidBills = false;
+          for (let j = i + 1; j < unpaidBillsAndPaydays.length; j++) {
+            if (unpaidBillsAndPaydays[j].type === 'payday') {
+              break; // Stop at the next payday
+            }
+            // Found an unpaid bill (since we already filtered out paid bills)
+            hasUnpaidBills = true;
+            break;
+          }
+
+          // Only include the payday if it has unpaid bills after it
+          if (hasUnpaidBills) {
+            result.push(current);
+          }
+        } else {
+          // It's an unpaid bill, always include
+          result.push(current);
+        }
+      }
+
+      return result;
+    })()
     : visibleData;
 
   const handleScrollToToday = () => {
@@ -203,11 +239,10 @@ function Dashboard() {
           </button>
           <button
             onClick={() => setHidePaid(!hidePaid)}
-            className={`border px-3 py-2 rounded-lg font-medium transition-colors h-10 w-10 flex items-center justify-center shrink-0 ${
-              hidePaid
+            className={`border px-3 py-2 rounded-lg font-medium transition-colors h-10 w-10 flex items-center justify-center shrink-0 ${hidePaid
                 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30'
                 : 'bg-white/5 hover:bg-white/10 text-neutral-300 border-white/10'
-            }`}
+              }`}
             title={hidePaid ? 'Show Paid Bills' : 'Hide Paid Bills'}
           >
             {hidePaid ? <EyeOff size={20} /> : <Eye size={20} />}
