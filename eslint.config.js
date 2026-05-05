@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'src-mountain-backup']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -26,6 +26,10 @@ export default defineConfig([
       // Downgraded to warn while we incrementally refactor effects to derive
       // these states instead of storing them.
       'react-hooks/set-state-in-effect': 'warn',
+      // Disable for Context providers that export hooks
+      'react-refresh/only-export-components': 'off',
+      // Allow 'any' for recharts types compatibility
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 ])
