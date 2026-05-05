@@ -70,10 +70,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   // Initial Load & Real-time Sync (Firestore)
   useEffect(() => {
     if (!user) {
-      setEntries([]);
-      setAccounts([]);
-      setTemplates([]);
-      setPaydayTemplates([]);
+      // No user: nothing to subscribe to. Cleanup from the previous run
+      // (when user was set) already ran, so any prior snapshots have been torn
+      // down. We intentionally do NOT clear state arrays here -- if the user
+      // logs back in, the next snapshot will overwrite. Components rendering
+      // these arrays should gate on the `user` value from AuthContext.
       setLoading(false);
       return;
     }
@@ -98,8 +99,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       setPaydayTemplates(data as PaydayTemplate[])
     );
 
-    // Backup settings are less critical, can be stored in user profile or separate doc
-    // For now, simpler to not sync them or store in a 'settings' collection
+    // Mark loading complete after subscriptions are attached. Snapshots will
+    // arrive asynchronously; consumers can still render skeletons while empty.
     setLoading(false);
 
     return () => {
@@ -107,6 +108,12 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       unsubAccounts();
       unsubTemplates();
       unsubPaydayTemplates();
+      // Clear cached data on unsubscribe so a different user logging in does
+      // not briefly see the previous user's snapshots before the new ones load.
+      setEntries([]);
+      setAccounts([]);
+      setTemplates([]);
+      setPaydayTemplates([]);
     };
   }, [user]);
 
