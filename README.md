@@ -1,176 +1,155 @@
-# Bill Tracker
+# Descent
 
-> A self-hosted, mobile-friendly finance tracker for managing bills, paydays, and account projections.
+> A mobile-friendly personal finance tracker for managing bills, paydays, and account projections.
 
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
 [![GitHub Issues](https://img.shields.io/github/issues/dmcguire80/Bill_Tracking_App.svg)](https://github.com/dmcguire80/Bill_Tracking_App/issues)
 [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/dmcguire80/Bill_Tracking_App.svg)](https://github.com/dmcguire80/Bill_Tracking_App/pulls)
 
-📘 **[Architecture](ARCHITECTURE.md)** | 🛠 **[Contributing](CONTRIBUTING.md)** | 🚀 **[Deployment](DEPLOYMENT_GUIDE.md)** | 📝 **[Changelog](CHANGELOG.md)**
+📘 **[Architecture](ARCHITECTURE.md)** &nbsp;|&nbsp; 🛠 **[Contributing](CONTRIBUTING.md)** &nbsp;|&nbsp; 🚀 **[Deployment](DEPLOYMENT_GUIDE.md)** &nbsp;|&nbsp; 📝 **[Changelog](CHANGELOG.md)**
+
+Live at **[descent.thorshome.xyz](https://descent.thorshome.xyz)**.
 
 ---
 
+## What is Descent?
+
+Descent is a single-page web app for tracking month-to-month cash flow. It models the way bills *actually* land — paydays push the balance up, recurring bills pull it down — and shows the running balance per account so you can see what every paycheck has to cover.
+
 ## Features
 
-### 🔐 Authentication & Security
-- **Secure Login**: Email/Password authentication via Firebase Auth
-- **Private Data**: Every user gets their own isolated database instance
-- **Cloud Sync**: Real-time synchronization across all devices (Google Firestore)
-- **Protected Routes**: Secure navigation guards
+### 🔐 Authentication & data
+- Email / password and Google sign-in via **Firebase Auth**
+- Per-user data isolation enforced by **Firestore security rules**
+- Real-time sync across devices
 
 ### 📊 Dashboard
-- Real-time balance tracking across multiple accounts
-- Running balance calculations with payday integration
-- Visual bill and payment management
-- Sortable and filterable bill table
+- Running balance across multiple accounts
+- Bill and payment management with sortable, filterable table
+- One-time payments and deposits
 
-### 📅 Template Management
-- Create recurring bill templates (weekly, bi-weekly, monthly, semi-monthly, yearly)
+### 📅 Templates
+- Recurring bill templates (weekly, bi-weekly, monthly, semi-monthly, yearly)
 - Payday schedule templates
-- Active/inactive status with optional end dates
-- Automatic entry generation from templates
+- Active / inactive status with optional end date
+- Auto-generates entries from templates
 
 ### 📈 Analytics
-- Year-to-date paid vs planned tracking
+- Year-to-date paid vs planned
 - Bill amount change detection
 - Historical year comparison
-- One-time payment inclusion
-- Status indicators and insights
 
-### ⚙️ Account Management
-- Multiple payment account support
-- Account reordering
-- Custom account names
-- Balance tracking per account
+### 🎨 UX
+- Responsive (mobile + desktop)
+- Dark theme with gradient accents
 
-### 🎨 User Experience
-- Unified navigation system
-- Responsive design for mobile and desktop
-- Dark mode interface with gradient backgrounds
-- Smooth transitions and animations
+## Tech stack
 
-## Tech Stack
+| Layer        | Tool                                     |
+| ------------ | ---------------------------------------- |
+| UI           | React 19 + TypeScript                    |
+| Routing      | React Router v7                          |
+| Styling      | Tailwind CSS v4                          |
+| Icons        | Lucide React                             |
+| Build        | Vite 7                                   |
+| Tests        | Vitest + Testing Library + Playwright    |
+| State        | React Context                            |
+| Auth + Data  | Firebase Auth + Cloud Firestore          |
+| Hosting      | **Cloudflare Pages**                     |
+| CI / Deploy  | GitHub Actions + `wrangler-action`       |
 
-- **Frontend**: React 18 with TypeScript
-- **Routing**: React Router v6
-- **Styling**: Tailwind CSS
-- **Icons**: Lucide React
-- **Build Tool**: Vite
-- **State Management**: React Context API
-- **Data Persistence**: Google Cloud Firestore (v0.8.0+)
-- **Backend (Legacy)**: Node.js Express (for serving static files)
+See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for the full pipeline.
 
-## Installation
+## Local development
 
-### Local Development
 ```bash
-# Clone the repository
-git clone https://github.com/dmcguire80/Bill_Tracking_App.git
+# Clone
+git clone git@github.com:dmcguire80/Bill_Tracking_App.git
 cd Bill_Tracking_App
 
-# Install dependencies
-npm install
+# Install (uses pnpm; install with `npm i -g pnpm` if you don't have it)
+pnpm install
 
-# Start development server
-npm run dev
+# Configure Firebase
+cp .env.example .env.local
+# fill in the VITE_FIREBASE_* values from the Firebase console
+
+# Run
+pnpm dev
 ```
 
-### Proxmox VE Deployment (Recommended)
-You can deploy this application to a Proxmox LXC container with a single command run on your Proxmox Host:
+The dev server is at `http://localhost:5173`.
+
+### Other scripts
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/dmcguire80/Bill_Tracking_App/main/proxmox-install.sh)"
+pnpm run build         # production build into ./dist
+pnpm run type-check    # TypeScript only, no emit
+pnpm run lint          # ESLint
+pnpm run test          # Vitest unit tests
+pnpm run test:e2e      # Playwright end-to-end
+pnpm run preview       # serve ./dist locally
 ```
 
-For detailed options and manual steps, see the [Proxmox Installation Guide](lxc/README.md).
-
-The app will be available at `http://localhost:5173`
-
-### Build for Production
-
-```bash
-npm run build
-```
-
-## Project Structure
+## Project structure
 
 ```
 src/
 ├── components/       # Reusable UI components
-│   ├── BillForm.tsx
-│   ├── BillTable.tsx
-│   ├── Layout.tsx
-│   ├── Navigation.tsx
-│   ├── PaydayForm.tsx
-│   └── SettingsNav.tsx
-├── context/          # React Context providers
-│   └── DataContext.tsx
-├── data/             # Initial data and constants
-│   └── initialData.ts
+├── config/           # Firebase initialisation
+├── context/          # React Context providers (Auth, Data)
+├── data/             # Constants and seed data
 ├── hooks/            # Custom React hooks
-│   └── useCalculations.ts
-├── pages/            # Page components
-│   ├── Analytics.tsx
-│   ├── ManageAccounts.tsx
-│   ├── ManageBills.tsx
-│   └── ManagePaydays.tsx
+├── pages/            # Route components
 ├── types/            # TypeScript type definitions
-│   └── index.ts
-├── utils/            # Utility functions
-│   ├── billAnalytics.ts
-│   └── generator.ts
-├── App.tsx           # Main application component
-└── main.tsx          # Application entry point
+├── utils/            # Pure helpers (analytics, generators, dates)
+├── App.tsx           # Routes + providers
+└── main.tsx          # Entry point
 ```
 
 ## Usage
 
-### Creating Bill Templates
-1. Navigate to **Settings → Manage Bills**
-2. Click **New Template**
-3. Fill in bill details (name, recurrence, day, amounts)
-4. Set active status and optional end month
-5. Save to automatically generate entries
+### Bill templates
+Settings → Manage Bills → **New Template**. Set the recurrence, day of month, amount, and account. Active templates auto-generate entries onto the dashboard.
 
-### Managing Paydays
-1. Navigate to **Settings → Manage Paydays**
-2. Create payday templates with balances
-3. Entries are auto-generated based on schedule
+### Paydays
+Settings → Manage Paydays. Templates here drive the running-balance math; entries are projected forward and you can adjust the actual amount when a paycheck lands.
 
-### Tracking Payments
-1. View all bills on the **Dashboard**
-2. Click checkboxes to mark bills as paid
-3. Add one-time payments with the **One-time Payment** button
-4. Add deposits with the **Add Deposit** button
+### Tracking payments
+On the Dashboard:
+- check a row to mark a bill paid
+- **One-time Payment** for non-recurring outflows
+- **Add Deposit** for non-payday inflows
 
-### Viewing Analytics
-1. Navigate to **Analytics**
-2. Select a year to view
-3. Review paid vs planned amounts
-4. Monitor bill amount changes
+### Analytics
+Pick a year, see paid vs planned and amount-change deltas across categories.
 
 ## Roadmap
 
-### Current Version (v0.8.x)
-- [x] User authentication (Login/Signup)
-- [x] Multi-user support (Separate data per user)
-- [x] Cloud Migration Tool (Local -> Cloud)
-- [x] Real-time Cloud Sync
-- [x] Performance optimizations (Batch writes)
+### Done
+- [x] Email + Google auth
+- [x] Per-user Firestore isolation
+- [x] Local → Cloud migration tool
+- [x] Real-time sync
+- [x] Batch-write performance pass
+- [x] Migrate hosting to Cloudflare Pages
 
-### Future Enhancements
-- [ ] Budget tracking & spending limits
-- [ ] Visual spending insights/graphs
-- [ ] Export to CSV/PDF
-- [ ] Recurring payment reminders
-- [ ] Mobile app (wrapper or React Native)
+### Considering
+- [ ] Budget categories with spending limits
+- [ ] Spending charts (already have `recharts` available in the family)
+- [ ] CSV / PDF export
+- [ ] Recurring payment reminders (email or push)
+- [ ] Mobile app shell (likely Capacitor before React Native)
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+PRs welcome. Please:
+1. Run `pnpm run type-check && pnpm run lint && pnpm run build` before pushing.
+2. If you add a new feature flag or env var, update both `.env.example` and the deploy guide.
+3. Keep commits scoped — one logical change per commit.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for more.
 
 ## License
 
-This project is licensed under the MIT License.
-
-
+MIT.

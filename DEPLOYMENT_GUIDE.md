@@ -1,79 +1,140 @@
-# Deployment & Infrastructure Guide
+# Deployment Guide
 
-This application has been migrated to a **Static Single Page Application (SPA)** architecture backed by Firebase.
-Legacy server-side code (Node.js/Express) has been removed.
+Descent is a static React + Vite SPA. The production deploy target is
+**Cloudflare Pages**; the data layer (Auth + Firestore) stays on Firebase.
 
-## Infrastructure Stack
-1.  **Host**: Proxmox VE (LXC Container)
-2.  **Web Server**: Nginx (serving static files)
-3.  **Backend**: Firebase (Cloud Firestore & Auth)
+## Architecture at a glance
 
-## Deployment Instructions (Updating the App)
-
-Because the old auto-update scripts were removed, use these commands to update your server:
-
-### 1. The Easy Way (Script)
-We have included an update script in the repository.
-
-```bash
-# Run manually
-./scripts/update.sh
+```
+            ┌─────────────────────────────┐
+            │  Browser (descent.<host>)   │
+            └──────────────┬──────────────┘
+                           │
+                  HTTPS    │
+                           ▼
+        ┌──────────────────────────────────┐
+        │  Cloudflare Pages                │
+        │  - static SPA bundle (Vite dist) │
+        │  - SPA fallback to /index.html   │
+        │  - long-cache for hashed assets  │
+        └──────────────┬───────────────────┘
+                       │
+                       │ Firebase JS SDK
+                       ▼
+        ┌──────────────────────────────────┐
+        │  Firebase                        │
+        │  - Auth (Email + Google)         │
+        │  - Firestore (per-user docs)     │
+        └──────────────────────────────────┘
 ```
 
-### 2. Auto-Update (Cron Job)
-To check for updates automatically every night at 4am:
+No server-side code lives in this repo. There is no Express server, no
+LXC container, no Cloud Function. Everything the app does at runtime is
+either static (served by Cloudflare) or talks straight to Firebase via
+the SDK.
 
-**Option A: The One-Liner (Easiest)**
-Run this single command:
-```bash
-(crontab -l 2>/dev/null; echo "0 4 * * * cd /opt/bill-tracker && ./scripts/update.sh >> /var/log/bill-tracker-update.log 2>&1") | crontab -
+## Production URL
+
+- `https://descent.thorshome.xyz` — main branch
+- `https://<branch>.descent.pages.dev` — preview deploys per branch
+
+## Required secrets
+
+Set these once in **GitHub → Settings → Secrets and variables → Actions**.
+They are consumed by `.github/workflows/deploy.yml`:
+
+| Secret                              | Where to find it                                                       |
+| ----------------------------------- | ---------------------------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN`              | Cloudflare dashboard → My Profile → API Tokens → Pages: Edit template  |
+| `CLOUDFLARE_ACCOUNT_ID`             | Cloudflare dashboard → right sidebar of any account page               |
+| `VITE_FIREBASE_API_KEY`             | Firebase console → Project settings → Web app config                   |
+| `VITE_FIREBASE_AUTH_DOMAIN`         | same                                                                   |
+| `VITE_FIREBASE_PROJECT_ID`          | same                                                                   |
+| `VITE_FIREBASE_STORAGE_BUCKET`      | same                                                                   |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | same                                                                   |
+| `VITE_FIREBASE_APP_ID`              | same                                                                   |
+| `VITE_FIREBASE_MEASUREMENT_ID`      | same (only present if Analytics is enabled)                            |
+
+> Firebase web API keys are not actually secret. Security is enforced by
+> Firestore rules (`firestore.rules`) and Auth providers. They live in
+> GitHub secrets purely so they don't get committed to the repo.
+
+## Deploy flow
+
+1. Push to a feature branch → CI runs `type-check`, `lint`, and `build`.
+2. CI deploys the build artifact to a **preview** Pages URL named after
+   the branch.
+3. Open a PR → Cloudflare leaves a comment with the preview URL.
+4. Merge to `main` → CI deploys to the production project, which is
+   bound to `descent.thorshome.xyz`.
+
+The deploy is idempotent. If a build fails, the previous deploy stays
+live; Cloudflare only flips traffic after a successful upload.
+
+## First-time setup (already done, kept as runbook)
+
+These steps were performed once when the project was bootstrapped. They
+are documented here so the next person (probably future Dave or Zola)
+knows what state Cloudflare is in.
+
+1. **Create the Pages project.** From a clean checkout:
+
+   ```sh
+   pnpm run build
+   wrangler pages project create descent \
+     --production-branch=main
+   ```
+
+2. **First manual deploy** (so the project exists before CI tries to use it):
+
+   ```sh
+   wrangler pages deploy ./dist --project-name=descent --branch=main
+   ```
+
+3. **Bind the custom domain** in the Cloudflare dashboard:
+   Pages → `descent` → Custom domains → `descent.thorshome.xyz`.
+   Cloudflare auto-creates the CNAME because the zone is on the same
+   account.
+
+4. **Add Firebase env vars to the Pages project** (production +
+   preview) so client-side rebuilds inside the dashboard also work.
+   GitHub Actions builds use the same values from GitHub secrets, so
+   this step is only required if someone clicks "Retry deploy" from
+   inside the Cloudflare dashboard.
+
+## Local development
+
+```sh
+pnpm install
+cp .env.example .env.local
+# fill in the VITE_FIREBASE_* values from the Firebase console
+pnpm dev
 ```
 
-**Option B: Manual Editor**
-1. Run `crontab -e`
-2. Paste this line at the bottom:
-   `0 4 * * * cd /opt/bill-tracker && ./scripts/update.sh >> /var/log/bill-tracker-update.log 2>&1`
-3. Save and exit (`Esc` -> `:wq` for vim, or `Ctrl+X` -> `Y` for nano).
+## Rolling back
 
-### 3. Continuous Deployment (Self-Hosted Runner)
-This method allows the server to "pull" updates automatically without exposing SSH to the internet.
+Cloudflare Pages keeps every prior deployment. To roll back:
 
-**1. Create the Runner on your Server:**
-Go to your GitHub Repo -> **Settings** -> **Actions** -> **Runners** -> **New self-hosted runner**.
-Select **Linux** and run the provided commands on your server.
+1. Cloudflare dashboard → Pages → `descent` → Deployments.
+2. Find the last good deploy → ⋯ → "Rollback to this deployment".
 
-*Tip: If running as root (which you probably are), use this command to configure:*
-```bash
-export RUNNER_ALLOW_RUNASROOT=1
-./config.sh --url https://github.com/dmcguire80/Bill_Tracking_App --token <YOUR_TOKEN>
-```
+This is instant and does not invalidate caches; users on stale tabs may
+keep seeing the bad deploy until they refresh, which is unavoidable for
+SPAs unless you wire a service-worker version check.
 
-**2. Install as a Service:**
-Once configured, install it so it runs automatically on boot:
-```bash
-sudo ./svc.sh install
-sudo ./svc.sh start
-```
+## What does *not* belong on Cloudflare
 
-**3. Global vs Local Runners:**
-*   **Local**: Installed inside *this* container. Can only deploy *this* app.
-*   **Global**: To manage *all* your LXCs, you would install the runner on a central "DevOps" container and give it SSH access to the others. For now, stick to **Local**.
+- **Firestore rules.** Stay where they are. Deploy with
+  `firebase deploy --only firestore:rules` from a machine with
+  `firebase` CLI installed. Rules-only deploys do not touch hosting.
+- **Auth providers.** Configure in the Firebase console. The Cloudflare
+  side just consumes the public config.
 
-## Application Container (Proxmox LXC)
-*   **OS**: Debian/Ubuntu
-*   **Port**: 80 (Nginx)
-*   **Proxying**: None required (App connects directly to Firebase).
+## When to revisit this guide
 
-## Troubleshooting
-*   **404 on Refresh**: Ensure Nginx is configured to redirect all 404s to `index.html` (SPA routing).
-    ```nginx
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    # API Proxy (Optional - Only if running a backend)
-    # location /api {
-    #     proxy_pass http://localhost:3000;
-    #     ...
-    # }
-    ```
+- If we ever move auth to Workers + a real auth provider (WorkOS,
+  Clerk, Better-Auth), update the architecture diagram and add a
+  Workers section.
+- If we add an API surface (Workers route, D1, R2), add the bindings to
+  `wrangler.toml` and document them here.
+- If the project is renamed, search-and-replace `descent` everywhere.

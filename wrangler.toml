@@ -1,0 +1,15 @@
+# Cloudflare Pages configuration for Descent.
+#
+# Most Pages settings live in the Cloudflare dashboard or are inferred from
+# the build output, but this file is required for `wrangler pages deploy`
+# to know the project name and (optionally) compatibility flags.
+#
+# The actual build is driven by `pnpm run build`, which produces ./dist.
+
+name = "descent"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-05-01"
+
+# No bindings yet. Auth + data are still on Firebase, so the Pages project
+# is purely static SPA hosting. Add [vars] / [[d1_databases]] / [[r2_buckets]]
+# here only when we move pieces server-side.
