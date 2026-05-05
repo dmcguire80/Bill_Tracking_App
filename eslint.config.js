@@ -19,5 +19,13 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // react-hooks v7 added this rule. It catches a real anti-pattern, but
+      // it also flags legitimate uses of setState in mount/unmount sync
+      // (e.g. `setLoading(false)` after attaching Firestore subscriptions).
+      // Downgraded to warn while we incrementally refactor effects to derive
+      // these states instead of storing them.
+      'react-hooks/set-state-in-effect': 'warn',
+    },
   },
 ])

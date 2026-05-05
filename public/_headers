@@ -1,0 +1,19 @@
+# Cloudflare Pages custom headers.
+# Mirrors the cache policy that was set in firebase.json before the migration.
+
+# Long cache for hashed static assets.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Hashed asset names always match the build output, so 1y cache is safe.
+/*.@(jpg|jpeg|gif|png|svg|webp|ico|js|css|woff|woff2|ttf|eot)
+  Cache-Control: public, max-age=31536000, immutable
+
+# HTML and JSON should never be cached. Rewrites send all routes to index.html
+# so this prevents stale shells from sticking around after a deploy.
+/*.html
+  Cache-Control: no-cache, no-store, must-revalidate
+/*.json
+  Cache-Control: no-cache, no-store, must-revalidate
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate

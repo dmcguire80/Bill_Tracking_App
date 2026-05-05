@@ -1,7 +1,8 @@
 {
-  "name": "linear-budget",
+  "name": "descent",
   "private": true,
-  "version": "0.9.30",
+  "version": "0.10.0",
+  "packageManager": "pnpm@10.33.3",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -9,7 +9,7 @@ export const Layout = ({ children }: LayoutProps) => {
       <header className="border-b border-white/10 px-8 py-4 hidden md:flex items-center justify-between">
         <div className="flex items-baseline gap-3">
           <h1 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
-            Linear Budget
+            Descent
           </h1>
           <span className="text-xs text-slate-500 font-mono">
             v{import.meta.env.PACKAGE_VERSION}

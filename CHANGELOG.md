@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.10.0 - Rebrand & Cloudflare Migration
+
+### Changed
+- **App name**: rebranded to **Descent**. Updated `package.json`, `<title>`, header, and signup tagline. Repo name unchanged for now.
+- **Hosting**: migrated from Firebase Hosting to **Cloudflare Pages**. Bound to `descent.thorshome.xyz`.
+- **CI/CD**: replaced legacy Proxmox/PM2/Nginx pipeline with GitHub Actions deploying via `wrangler-action`. New workflow at `.github/workflows/deploy.yml`.
+- **Package manager**: switched from npm to pnpm to align with the rest of the toolchain. `packageManager` field pinned to `pnpm@10.33.3`.
+- **DataContext effect**: dropped the no-user setState branch in favour of clearing arrays in the cleanup function (the React-recommended unsubscribe pattern).
+
+### Added
+- `wrangler.toml` for the Cloudflare Pages project.
+- `public/_redirects` for SPA fallback to `/index.html`.
+- `public/_headers` mirroring the previous `firebase.json` cache policy.
+- New `DEPLOYMENT_GUIDE.md` for the Cloudflare pipeline.
+
+### Removed
+- `scripts/update.sh` (legacy Proxmox cron-style deploy).
+- `progress.md`, `task_plan.md`, `findings.md`, `RELEASE_FIXES.md` — stale agent-session scaffolding from before the migration.
+
+### Notes
+- Auth + Firestore unchanged. Only hosting moved.
+- The `eslint-plugin-react-hooks` v7 rule `set-state-in-effect` is downgraded to `warn` while the loading-state pattern is incrementally refactored to be derived rather than stored.
+
 ## v0.9.12 - Deployment Fix
 ### Fixed
 - **CI**: Update script now fails correctly if Nginx root is missing (debugging stale deployments).
