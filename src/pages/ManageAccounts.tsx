@@ -1,184 +1,301 @@
 import { useState } from 'react';
+import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
 import { useData } from '../context/DataContext';
-import { Trash2, Plus, AlertCircle, Edit2, ArrowUp, ArrowDown, Save, X } from 'lucide-react';
-import type { Account } from '../types';
+import { getAccountTypeLabel, formatCurrency } from '../utils/calculations';
+import type { DebtAccount, DebtAccountType } from '../types';
 
-export const ManageAccounts = () => {
-  const { accounts, addAccount, removeAccount, updateAccount, reorderAccounts } = useData();
-  const [newAccount, setNewAccount] = useState('');
-  const [error, setError] = useState('');
+const ACCOUNT_TYPES: { value: DebtAccountType; label: string }[] = [
+  { value: 'CREDIT_CARD', label: 'Credit Card' },
+  { value: 'AUTO_LOAN', label: 'Auto Loan' },
+  { value: 'MORTGAGE', label: 'Mortgage' },
+  { value: 'STUDENT_LOAN', label: 'Student Loan' },
+  { value: 'PERSONAL_LOAN', label: 'Personal Loan' },
+  { value: 'MEDICAL', label: 'Medical' },
+  { value: 'OTHER', label: 'Other' },
+];
+
+export function ManageAccounts() {
+  const { accounts, addAccount, updateAccount, deleteAccount, toggleAccountActive } = useData();
+
+  const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    accountType: 'CREDIT_CARD' as DebtAccountType,
+    creditLimit: '',
+    interestRate: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = newAccount.trim();
-
-    if (!trimmed) return;
-
-    if (accounts.some(a => a.name.toLowerCase() === trimmed.toLowerCase())) {
-      setError('Account already exists');
-      return;
-    }
-
-    addAccount(trimmed);
-    setNewAccount('');
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      accountType: 'CREDIT_CARD',
+      creditLimit: '',
+      interestRate: '',
+    });
+    setShowForm(false);
+    setEditingId(null);
     setError('');
   };
 
-  const handleDelete = (id: string, name: string) => {
-    if (
-      confirm(
-        `Are you sure you want to delete account "${name}"? This will not remove existing amounts, but they won't be visible in the table columns.`
-      )
-    ) {
-      removeAccount(id);
-    }
-  };
-
-  const startEdit = (account: Account) => {
+  const handleEdit = (account: DebtAccount) => {
+    setFormData({
+      name: account.name,
+      accountType: account.accountType,
+      creditLimit: account.creditLimit?.toString() || '',
+      interestRate: account.interestRate?.toString() || '',
+    });
     setEditingId(account.id);
-    setEditName(account.name);
+    setShowForm(true);
   };
 
-  const saveEdit = () => {
-    if (editingId && editName.trim()) {
-      updateAccount(editingId, editName.trim());
-      setEditingId(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!formData.name.trim()) {
+      setError('Account name is required');
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const creditLimit = formData.creditLimit ? parseFloat(formData.creditLimit) : undefined;
+      const interestRate = formData.interestRate ? parseFloat(formData.interestRate) : undefined;
+
+      if (editingId) {
+        await updateAccount(editingId, {
+          name: formData.name.trim(),
+          accountType: formData.accountType,
+          creditLimit,
+          interestRate,
+        });
+      } else {
+        await addAccount(formData.name.trim(), formData.accountType, creditLimit, interestRate);
+      }
+
+      resetForm();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save account');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const moveAccount = (index: number, direction: 'up' | 'down') => {
-    const newAccounts = [...accounts];
-    const swapIndex = direction === 'up' ? index - 1 : index + 1;
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Delete "${name}"? This will also delete all balance entries for this account.`)) {
+      return;
+    }
 
-    if (swapIndex >= 0 && swapIndex < newAccounts.length) {
-      [newAccounts[index], newAccounts[swapIndex]] = [newAccounts[swapIndex], newAccounts[index]];
-      reorderAccounts(newAccounts);
+    try {
+      await deleteAccount(id);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete account');
     }
   };
 
   return (
-    <>
-      <div className="space-y-8">
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-2">Manage Accounts</h2>
-          <p className="text-neutral-400">Add, rename, or reorder payment accounts/sources.</p>
-        </div>
-
-        {/* Add Account Form */}
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6 max-w-xl">
-          <form onSubmit={handleAdd} className="flex gap-4 items-start">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-neutral-400 mb-1">
-                New Account Name
-              </label>
-              <input
-                type="text"
-                value={newAccount}
-                onChange={e => {
-                  setNewAccount(e.target.value);
-                  setError('');
-                }}
-                className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                placeholder="e.g. Chase Sapphire"
-              />
-              {error && (
-                <div className="flex items-center gap-2 text-red-400 text-sm mt-2">
-                  <AlertCircle size={14} />
-                  <span>{error}</span>
-                </div>
-              )}
-            </div>
+    <div className="max-w-4xl mx-auto">
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold">Manage Debt Accounts</h1>
+          {!showForm && (
             <button
-              type="submit"
-              disabled={!newAccount.trim()}
-              className="mt-6 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              onClick={() => setShowForm(true)}
+              className="btn btn-primary flex items-center gap-2"
             >
-              <Plus size={18} />
-              Add
+              <Plus className="w-5 h-5" />
+              Add Account
             </button>
-          </form>
+          )}
         </div>
 
-        {/* Account List */}
-        <div className="space-y-3 max-w-3xl">
-          {accounts
-            .slice()
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((account, index) => (
+        {/* Add/Edit Form */}
+        {showForm && (
+          <form onSubmit={handleSubmit} className="mb-8 p-6 bg-[var(--bg-secondary)] rounded-lg">
+            <h3 className="font-semibold text-lg mb-4">
+              {editingId ? 'Edit Account' : 'New Account'}
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Account Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g., Chase Freedom"
+                  className="input w-full"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Account Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.accountType}
+                  onChange={(e) =>
+                    setFormData({ ...formData, accountType: e.target.value as DebtAccountType })
+                  }
+                  className="input w-full"
+                >
+                  {ACCOUNT_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Credit Limit (optional)
+                </label>
+                <input
+                  type="number"
+                  value={formData.creditLimit}
+                  onChange={(e) => setFormData({ ...formData, creditLimit: e.target.value })}
+                  placeholder="e.g., 5000"
+                  min="0"
+                  step="0.01"
+                  className="input w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Interest Rate % (optional)
+                </label>
+                <input
+                  type="number"
+                  value={formData.interestRate}
+                  onChange={(e) => setFormData({ ...formData, interestRate: e.target.value })}
+                  placeholder="e.g., 18.99"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  className="input w-full"
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-red-600 dark:text-red-400 text-sm mb-4">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={saving}
+                className="btn btn-primary flex items-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <div className="spinner-small"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-5 h-5" />
+                    {editingId ? 'Update' : 'Add'} Account
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="btn btn-secondary flex items-center gap-2"
+              >
+                <X className="w-5 h-5" />
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Accounts List */}
+        <div className="space-y-3">
+          <h3 className="font-semibold text-lg mb-3">Your Accounts ({accounts.length})</h3>
+
+          {accounts.length === 0 ? (
+            <div className="text-center py-12 text-[var(--text-secondary)]">
+              <p className="mb-4">No accounts yet</p>
+              <button onClick={() => setShowForm(true)} className="btn btn-primary">
+                Add Your First Account
+              </button>
+            </div>
+          ) : (
+            accounts.map((account) => (
               <div
                 key={account.id}
-                className="bg-white/5 border border-white/10 rounded-xl p-4 flex justify-between items-center group hover:bg-white/10 transition-colors"
+                className={`p-4 rounded-lg border-2 transition-all ${
+                  account.isActive
+                    ? 'bg-[var(--bg-secondary)] border-transparent'
+                    : 'bg-[var(--bg-secondary)] border-dashed border-[var(--border)] opacity-60'
+                }`}
               >
-                {editingId === account.id ? (
-                  <div className="flex items-center gap-3 flex-1">
-                    <input
-                      value={editName}
-                      onChange={e => setEditName(e.target.value)}
-                      className="bg-black/40 border border-emerald-500/50 rounded px-3 py-1 text-white flex-1"
-                      autoFocus
-                    />
-                    <button
-                      onClick={saveEdit}
-                      className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded"
-                    >
-                      <Save size={18} />
-                    </button>
-                    <button
-                      onClick={() => setEditingId(null)}
-                      className="p-2 text-neutral-400 hover:bg-white/10 rounded"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <span className="text-neutral-500 font-mono text-sm w-6">#{index + 1}</span>
-                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-sm border border-emerald-500/20">
-                      {account.name.charAt(0).toUpperCase()}
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-semibold">{account.name}</h4>
+                      <span className="text-xs px-2 py-1 rounded-full bg-[var(--bg-primary)] text-[var(--text-secondary)]">
+                        {getAccountTypeLabel(account.accountType)}
+                      </span>
+                      {!account.isActive && (
+                        <span className="text-xs px-2 py-1 rounded-full bg-gray-500 text-white">
+                          Inactive
+                        </span>
+                      )}
                     </div>
-                    <span className="font-medium text-neutral-200">{account.name}</span>
-                  </div>
-                )}
 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => moveAccount(index, 'up')}
-                    disabled={index === 0}
-                    className="p-2 text-neutral-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors disabled:opacity-20"
-                    title="Move Up"
-                  >
-                    <ArrowUp size={18} />
-                  </button>
-                  <button
-                    onClick={() => moveAccount(index, 'down')}
-                    disabled={index === accounts.length - 1}
-                    className="p-2 text-neutral-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors disabled:opacity-20"
-                    title="Move Down"
-                  >
-                    <ArrowDown size={18} />
-                  </button>
-                  <div className="w-px h-6 bg-white/10 mx-2" />
-                  <button
-                    onClick={() => startEdit(account)}
-                    className="p-2 text-neutral-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
-                    title="Rename Account"
-                  >
-                    <Edit2 size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(account.id, account.name)}
-                    className="p-2 text-neutral-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                    title="Delete Account"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                    <div className="text-sm text-[var(--text-secondary)] space-y-1">
+                      {account.creditLimit && (
+                        <div>Credit Limit: {formatCurrency(account.creditLimit)}</div>
+                      )}
+                      {account.interestRate && (
+                        <div>Interest Rate: {account.interestRate}%</div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(account)}
+                      className="btn-icon"
+                      title="Edit"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => toggleAccountActive(account.id)}
+                      className="btn-icon"
+                      title={account.isActive ? 'Deactivate' : 'Activate'}
+                    >
+                      {account.isActive ? '👁️' : '👁️‍🗨️'}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(account.id, account.name)}
+                      className="btn-icon text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            ))}
+            ))
+          )}
         </div>
       </div>
-    </>
+    </div>
   );
-};
+}

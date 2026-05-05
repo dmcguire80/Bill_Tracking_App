@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import {
   collection,
   doc,
@@ -15,34 +15,28 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from './AuthContext';
-import type { DebtAccount, BalanceEntry, DebtAccountType } from '../types';
+import type { Account, Entry } from '../types';
 
 interface DataContextType {
-  accounts: DebtAccount[];
-  entries: BalanceEntry[];
+  accounts: Account[];
+  entries: Entry[];
   loading: boolean;
   error: string | null;
   // Account operations
-  addAccount: (
-    name: string,
-    accountType: DebtAccountType,
-    creditLimit?: number,
-    interestRate?: number
-  ) => Promise<string>;
-  updateAccount: (id: string, data: Partial<DebtAccount>) => Promise<void>;
+  addAccount: (name: string, accountType?: string) => Promise<string>;
+  updateAccount: (id: string, data: Partial<Account>) => Promise<void>;
   deleteAccount: (id: string) => Promise<void>;
   toggleAccountActive: (id: string) => Promise<void>;
-  reorderAccounts: (reorderedAccounts: DebtAccount[]) => Promise<void>;
   // Entry operations
-  addEntry: (accountId: string, value: number, date: Date, note?: string) => Promise<void>;
+  addEntry: (accountId: string, value: number, date: Date, notes?: string) => Promise<void>;
   addEntries: (
-    entries: { accountId: string; value: number; date: Date; note?: string }[]
+    entries: { accountId: string; value: number; date: Date; notes?: string }[]
   ) => Promise<void>;
-  updateEntry: (id: string, data: Partial<BalanceEntry>) => Promise<void>;
+  updateEntry: (id: string, data: Partial<Entry>) => Promise<void>;
   deleteEntry: (id: string) => Promise<void>;
   // Utility
-  getActiveAccounts: () => DebtAccount[];
-  getEntriesForAccount: (accountId: string) => BalanceEntry[];
+  getActiveAccounts: () => Account[];
+  getEntriesForAccount: (accountId: string) => Entry[];
 }
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -61,8 +55,8 @@ interface DataProviderProps {
 
 export function DataProvider({ children }: DataProviderProps) {
   const { user } = useAuth();
-  const [accounts, setAccounts] = useState<DebtAccount[]>([]);
-  const [entries, setEntries] = useState<BalanceEntry[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,22 +65,17 @@ export function DataProvider({ children }: DataProviderProps) {
     if (!user) return;
 
     const accountsRef = collection(db, 'users', user.uid, 'accounts');
-    const accountsQuery = query(accountsRef, orderBy('order'), orderBy('name'));
+    const accountsQuery = query(accountsRef, orderBy('name'));
 
     const unsubscribe = onSnapshot(
       accountsQuery,
       (snapshot) => {
-        const accountsData: DebtAccount[] = snapshot.docs.map((doc) => ({
+        const accountsData: Account[] = snapshot.docs.map((doc) => ({
           id: doc.id,
-          userId: user.uid,
           name: doc.data().name,
-          accountType: doc.data().accountType || 'OTHER',
-          creditLimit: doc.data().creditLimit || undefined,
-          interestRate: doc.data().interestRate || undefined,
+          accountType: doc.data().accountType || null,
           isActive: doc.data().isActive ?? true,
-          order: doc.data().order ?? 0,
           createdAt: doc.data().createdAt?.toDate() || new Date(),
-          updatedAt: doc.data().updatedAt?.toDate() || new Date(),
         }));
         setAccounts(accountsData);
         setLoading(false);
@@ -115,13 +104,12 @@ export function DataProvider({ children }: DataProviderProps) {
     const unsubscribe = onSnapshot(
       entriesQuery,
       (snapshot) => {
-        const entriesData: BalanceEntry[] = snapshot.docs.map((doc) => ({
+        const entriesData: Entry[] = snapshot.docs.map((doc) => ({
           id: doc.id,
           accountId: doc.data().accountId,
-          userId: user.uid,
           value: doc.data().value,
           entryDate: doc.data().entryDate?.toDate() || new Date(),
-          note: doc.data().note || undefined,
+          notes: doc.data().notes || null,
           createdAt: doc.data().createdAt?.toDate() || new Date(),
         }));
         setEntries(entriesData);
@@ -137,31 +125,14 @@ export function DataProvider({ children }: DataProviderProps) {
 
   // Account operations
   const addAccount = useCallback(
-    async (
-      name: string,
-      accountType: DebtAccountType,
-      creditLimit?: number,
-      interestRate?: number
-    ): Promise<string> => {
+    async (name: string, accountType?: string): Promise<string> => {
       if (!user) throw new Error('Not authenticated');
       const accountsRef = collection(db, 'users', user.uid, 'accounts');
-      
-      // Get current max order
-      const snapshot = await getDocs(accountsRef);
-      const maxOrder = snapshot.docs.reduce((max, doc) => {
-        const order = doc.data().order ?? 0;
-        return order > max ? order : max;
-      }, 0);
-
       const docRef = await addDoc(accountsRef, {
         name,
-        accountType,
-        creditLimit: creditLimit || null,
-        interestRate: interestRate || null,
+        accountType: accountType || null,
         isActive: true,
-        order: maxOrder + 1,
         createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
       });
       return docRef.id;
     },
@@ -169,10 +140,10 @@ export function DataProvider({ children }: DataProviderProps) {
   );
 
   const updateAccount = useCallback(
-    async (id: string, data: Partial<DebtAccount>) => {
+    async (id: string, data: Partial<Account>) => {
       if (!user) throw new Error('Not authenticated');
       const accountRef = doc(db, 'users', user.uid, 'accounts', id);
-      await updateDoc(accountRef, { ...data, updatedAt: Timestamp.now() });
+      await updateDoc(accountRef, data);
     },
     [user]
   );
@@ -207,31 +178,16 @@ export function DataProvider({ children }: DataProviderProps) {
     [accounts, updateAccount]
   );
 
-  const reorderAccounts = useCallback(
-    async (reorderedAccounts: DebtAccount[]) => {
-      if (!user) throw new Error('Not authenticated');
-      const batch = writeBatch(db);
-
-      reorderedAccounts.forEach((account, index) => {
-        const accountRef = doc(db, 'users', user.uid, 'accounts', account.id);
-        batch.update(accountRef, { order: index });
-      });
-
-      await batch.commit();
-    },
-    [user]
-  );
-
   // Entry operations
   const addEntry = useCallback(
-    async (accountId: string, value: number, date: Date, note?: string) => {
+    async (accountId: string, value: number, date: Date, notes?: string) => {
       if (!user) throw new Error('Not authenticated');
       const entriesRef = collection(db, 'users', user.uid, 'entries');
       await addDoc(entriesRef, {
         accountId,
         value,
         entryDate: Timestamp.fromDate(date),
-        note: note || null,
+        notes: notes || null,
         createdAt: Timestamp.now(),
       });
     },
@@ -239,7 +195,7 @@ export function DataProvider({ children }: DataProviderProps) {
   );
 
   const addEntries = useCallback(
-    async (entriesData: { accountId: string; value: number; date: Date; note?: string }[]) => {
+    async (entriesData: { accountId: string; value: number; date: Date; notes?: string }[]) => {
       if (!user) throw new Error('Not authenticated');
       const batch = writeBatch(db);
       const entriesRef = collection(db, 'users', user.uid, 'entries');
@@ -250,7 +206,7 @@ export function DataProvider({ children }: DataProviderProps) {
           accountId: entry.accountId,
           value: entry.value,
           entryDate: Timestamp.fromDate(entry.date),
-          note: entry.note || null,
+          notes: entry.notes || null,
           createdAt: Timestamp.now(),
         });
       }
@@ -261,7 +217,7 @@ export function DataProvider({ children }: DataProviderProps) {
   );
 
   const updateEntry = useCallback(
-    async (id: string, data: Partial<BalanceEntry>) => {
+    async (id: string, data: Partial<Entry>) => {
       if (!user) throw new Error('Not authenticated');
       const entryRef = doc(db, 'users', user.uid, 'entries', id);
       const updateData: Record<string, unknown> = { ...data };
@@ -303,7 +259,6 @@ export function DataProvider({ children }: DataProviderProps) {
     updateAccount,
     deleteAccount,
     toggleAccountActive,
-    reorderAccounts,
     addEntry,
     addEntries,
     updateEntry,
