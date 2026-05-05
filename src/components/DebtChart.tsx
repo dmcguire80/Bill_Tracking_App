@@ -26,7 +26,7 @@ export function DebtChart({ data, accounts }: DebtChartProps) {
   }
 
   const formatXAxis = (dateStr: string) => {
-    const [year, month, day] = dateStr.split('-');
+    const [, month, day] = dateStr.split('-');
     return `${month}/${day}`;
   };
 
@@ -61,8 +61,8 @@ export function DebtChart({ data, accounts }: DebtChartProps) {
             borderRadius: '8px',
             color: 'var(--text-primary)',
           }}
-          labelFormatter={formatTooltipDate}
-          formatter={(value: number) => [formatCurrency(value), '']}
+          labelFormatter={(label: any) => formatTooltipDate(String(label))}
+          formatter={(value: any) => [formatCurrency(Number(value)), '']}
         />
         <Legend
           wrapperStyle={{
