@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingDown, TrendingUp, DollarSign, Target } from 'lucide-react';
+import { TrendingDown, TrendingUp, Target } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { TimeFilterBar } from '../components/TimeFilterBar';
 import { DebtChart } from '../components/DebtChart';
@@ -52,7 +52,7 @@ export function Dashboard() {
         className={`${
           summary.totalDebt === 0
             ? 'bg-gradient-to-br from-green-500 to-emerald-600'
-            : 'bg-gradient-to-br from-red-500 to-rose-600'
+            : 'gradient-primary'
         } text-white p-8 rounded-xl shadow-lg mb-8 text-center`}
       >
         <p className="text-lg opacity-90 mb-2">
@@ -99,30 +99,6 @@ export function Dashboard() {
           <DebtChart data={chartData} accounts={activeAccounts} />
         </div>
       )}
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <button
-          onClick={() => navigate('/data-entry')}
-          className="btn btn-primary flex items-center justify-center gap-2 py-4"
-        >
-          <DollarSign className="w-5 h-5" />
-          Update Balances
-        </button>
-        <button
-          onClick={() => navigate('/manage-accounts')}
-          className="btn btn-secondary flex items-center justify-center gap-2 py-4"
-        >
-          <Target className="w-5 h-5" />
-          Manage Accounts
-        </button>
-        <button
-          onClick={() => navigate('/history')}
-          className="btn btn-secondary flex items-center justify-center gap-2 py-4"
-        >
-          View History
-        </button>
-      </div>
 
       {/* Account List */}
       <div className="card p-6">

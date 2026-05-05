@@ -1,65 +1,167 @@
-import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, DollarSign, Target, Clock, Settings as SettingsIcon } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Link, useLocation, Outlet } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  DollarSign,
+  Target,
+  Clock,
+  Settings as SettingsIcon,
+  Sun,
+  Moon,
+  LogOut,
+  Menu,
+  X,
+  TrendingDown,
+} from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export function Layout() {
+  const location = useLocation();
+  const { user, logout } = useAuth();
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved ? JSON.parse(saved) : true;
+  });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
+
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
   const navItems = [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/data-entry', icon: DollarSign, label: 'Update' },
-    { to: '/manage-accounts', icon: Target, label: 'Accounts' },
-    { to: '/history', icon: Clock, label: 'History' },
-    { to: '/settings', icon: SettingsIcon, label: 'Settings' },
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/data-entry', label: 'Update', icon: DollarSign },
+    { path: '/manage-accounts', label: 'Accounts', icon: Target },
+    { path: '/history', label: 'History', icon: Clock },
+    { path: '/settings', label: 'Settings', icon: SettingsIcon },
   ];
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
+    <div className="min-h-screen bg-[var(--bg-primary)] transition-colors duration-300">
       {/* Header */}
-      <header className="bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-lg">
-        <div className="container-wide py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="text-3xl">📉</div>
-              <div>
-                <h1 className="text-2xl font-bold">Descent</h1>
-                <p className="text-sm opacity-90">Debt Reduction Tracker</p>
-              </div>
+      <header className="gradient-primary text-white shadow-lg sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <Link to="/dashboard" className="flex items-center gap-2">
+              <TrendingDown className="w-8 h-8" />
+              <span className="text-xl font-bold hidden sm:block">Descent</span>
+            </Link>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center gap-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-white/20 text-white'
+                        : 'text-white/80 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Right side actions */}
+            <div className="flex items-center gap-2">
+              {/* Dark mode toggle */}
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                aria-label="Toggle dark mode"
+              >
+                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+
+              {/* User info & logout */}
+              {user && (
+                <div className="hidden sm:flex items-center gap-2">
+                  <span className="text-sm text-white/80">{user.email}</span>
+                  <button
+                    onClick={handleLogout}
+                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                    aria-label="Logout"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+
+              {/* Mobile menu toggle */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 rounded-lg hover:bg-white/10 transition-colors md:hidden"
+                aria-label="Toggle menu"
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile Navigation */}
+        {mobileMenuOpen && (
+          <nav className="md:hidden border-t border-white/20 animate-fadeIn">
+            <div className="px-4 py-2 space-y-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={closeMobileMenu}
+                    className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-white/20 text-white'
+                        : 'text-white/80 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
+              {user && (
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 px-3 py-3 rounded-lg text-white/80 hover:bg-white/10 hover:text-white w-full"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span className="font-medium">Logout</span>
+                </button>
+              )}
+            </div>
+          </nav>
+        )}
       </header>
 
-      {/* Navigation */}
-      <nav className="bg-[var(--bg-secondary)] border-b border-[var(--border)] sticky top-0 z-10">
-        <div className="container-wide">
-          <div className="flex gap-1 overflow-x-auto">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  `flex items-center gap-2 px-4 py-3 font-medium transition-colors whitespace-nowrap ${
-                    isActive
-                      ? 'text-[var(--primary)] border-b-2 border-[var(--primary)]'
-                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                  }`
-                }
-              >
-                <item.icon className="w-5 h-5" />
-                <span className="hidden sm:inline">{item.label}</span>
-              </NavLink>
-            ))}
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="container-wide py-8">
+      {/* Main content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fadeIn">
         <Outlet />
       </main>
-
-      {/* Footer */}
-      <footer className="mt-12 py-6 text-center text-sm text-[var(--text-secondary)] border-t border-[var(--border)]">
-        <p>Descent &copy; 2026 · Track your journey to debt freedom</p>
-      </footer>
     </div>
   );
 }
